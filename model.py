@@ -82,7 +82,7 @@ class SegCLIP(nn.Module):
 			image = self.clip.visual.avgpool(image)
 			return image
 
-		with torch.no_grad:
+		with torch.no_grad():
 			text = self.clip.encode_text(text)
 	
 			image = stem(image)
@@ -167,14 +167,20 @@ def load_custom_clip(model_name, num_classes, device=None):
 	'''
 	embed_dim =  model.text_projection.shape[1]
 	segCLIP = SegCLIP(model, num_classes, embed_dim)
-	preprocess.transforms.pop(2)
-	preproc = lambda x: preprocess(cv2.cvtColor(x.transpose(2,0,1), cv2.COLOR_BGR2RGB))
+	preprocess.transforms.pop(2) # convert_to_rgb
+	preprocess.transforms.pop(2) # ToTensor
+	preprocess.transforms[0] = tf.Resize(size=(224,224), interpolation=tf.InterpolationMode.BICUBIC)
+	# preprocess.transforms.insert(0,tf.ToTensor())
+	# print(preprocess)
+	preproc = lambda x: preprocess( tf.ToTensor()(x) )
 	preprocess_label = tf.Compose([])
 	preprocess_label.transforms = preprocess.transforms.copy()
 	# label cant be interpolated normally, use nearest neighbor interpolation to keep integer values
-	preprocess_label.transforms[0] = tf.Resize(size=224, interpolation=tf.InterpolationMode.NEAREST)
+	preprocess.transforms.pop(0) # ToTensor
+	preprocess_label.transforms[0] = tf.Resize(size=(224,224), interpolation=tf.InterpolationMode.NEAREST)
 	preprocess_label.transforms.pop(-1) # no normalization for label
 	# preproc_lbl = lambda x: preprocess_label(x)
+	preproc_lbl = lambda x: preprocess_label(torch.tensor(x).unsqueeze(0)).squeeze(0)
 
 
-	return segCLIP.to(device), preproc, preprocess_label
+	return segCLIP.to(device), preproc, preproc_lbl
