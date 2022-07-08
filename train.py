@@ -21,10 +21,44 @@ optimiser = torch.optim.Adam(segclip.parameters(), lr=config['lr'], weight_decay
 
 pbar = tqdm(enumerate(trainloader), total=len(trainloader))
 
+pascal_labels = [
+		'aeroplane',
+		'bicycle',
+		'bird',
+		'boat',
+		'bottle',
+		'bus',
+		'car',
+		'cat',
+		'chair',
+		'cow',
+		'dog',
+		'horse',
+		'motorbike',
+		'person',
+		'sheep',
+		'sofa',
+		'diningtable',
+		'pottedplant',
+		'train',
+		'tvmonitor',
+	]
+
+template = 'a photo of a '
+pascal_labels = [template+x for x in pascal_labels]
+text_tokens = clip.tokenize(pascal_labels).to(device)
+
 for i, (batch_img, batch_lbl, texts) in pbar:
 	batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
-	text_tokens = clip.tokenize(texts).to(device)
+
 	output = segclip(batch_img, text_tokens)
+	print(output.shape, 
+		batch_img.shape,
+		# output.sum(dim=0).shape, 
+		text_tokens.shape,
+		batch_lbl.shape)
+	# 1024 dimensional embedding for each pixel (or 1024 channels) and 
+	# take dot product of all N classes and take softmax of that
 	loss = loss_fn(output, batch_lbl)
 	loss.backward()
 	optimiser.step()

@@ -1,6 +1,6 @@
 config = {
 	'mode': 'train',
-	'batch_size': 16,
+	'batch_size': 4,
 
 	'lr': 1e-3,
 	'wd': 1e-4,
