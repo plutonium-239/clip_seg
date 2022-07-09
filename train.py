@@ -96,7 +96,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 	# plot = plt.plot(times)
 	# if epoch%10==9:
 	writer.add_scalar('training loss', epoch_loss, epoch)
-	final_loss = epoch_loss.item()
+	final_loss = epoch_loss
 
 print('End')
 print()
