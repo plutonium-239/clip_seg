@@ -32,11 +32,11 @@ segclip, preproc, preproc_lbl = model.load_custom_clip('RN50', num_classes=5, de
 segclip.to(device) # redundant
 
 dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split=config['mode'], img_size=224, is_transform=True)
-trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=4)
+trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
 
 
 loss_fn = nn.CrossEntropyLoss()
-optimiser = torch.optim.Adam(segclip.parameters(), lr=config['lr'], weight_decay=config['wd'])
+optimiser = torch.optim.Adam(segclip.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
 
 pascal_labels = [
 		'aeroplane',
