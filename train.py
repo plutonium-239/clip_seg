@@ -90,7 +90,8 @@ with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_sh
 
 print('End')
 print()
-print(prof.key_averages().table(sort_by="cpu_time_total"))
+f = open('profile.txt','w')
+f.write(prof.key_averages().table(sort_by="cpu_time_total"))
 writer.add_hparams(config, {'final loss': final_loss}, run_name=logdir)
 
 
