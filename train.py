@@ -88,10 +88,12 @@ with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_sh
 				writer.add_scalar('training loss', epoch_loss, epoch)
 				final_loss = epoch_loss.item()
 
-print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+print('End')
+print()
+print(prof.key_averages().table(sort_by="cpu_time_total"))
 writer.add_hparams(config, {'final loss': final_loss}, run_name=logdir)
 
 
 writer.close()
 torch.save(segclip.state_dict(), f'runs/{logdir}/model.pt')
-subprocess.run(['tensorboard', 'dev', 'upload', '--logdir', 'runs/'])
+# subprocess.run(['tensorboard', 'dev', 'upload', '--logdir', 'runs/'])
