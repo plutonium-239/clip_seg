@@ -40,27 +40,27 @@ loss_fn = nn.CrossEntropyLoss()
 optimiser = torch.optim.Adam(segclip.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
 
 pascal_labels = [
-		'aeroplane',
-		'bicycle',
-		'bird',
-		'boat',
-		'bottle',
-		'bus',
-		'car',
-		'cat',
-		'chair',
-		'cow',
-		'dog',
-		'horse',
-		'motorbike',
-		'person',
-		'sheep',
-		'sofa',
-		'diningtable',
-		'pottedplant',
-		'train',
-		'tvmonitor',
-	]
+	'aeroplane',
+	'bicycle',
+	'bird',
+	'boat',
+	'bottle',
+	'bus',
+	'car',
+	'cat',
+	'chair',
+	'cow',
+	'dog',
+	'horse',
+	'motorbike',
+	'person',
+	'sheep',
+	'sofa',
+	'diningtable',
+	'pottedplant',
+	'train',
+	'tvmonitor',
+]
 
 template = 'a photo of a '
 pascal_labels = [template+x for x in pascal_labels]
@@ -89,9 +89,12 @@ for epoch in tqdm(range(config['num_epochs'])):
 		loss.backward()
 		optimiser.step()
 		i,u,_ = intersectionAndUnionGPU(F.softmax(output, dim=1).argmax(dim=1), batch_lbl, output.shape[1])
-		iou = i/u
-		epoch_miou += iou.mean().item()
-		pbar.set_description_str(f'loss: {loss.item()}, iou: {iou.mean().item()}')
+		batch_miou = i.sum()/u.sum()
+		tqdm.write(str(i)+str(u))
+		epoch_miou += batch_miou.item()
+		tqdm.write(str(batch_miou.item()))
+		tqdm.write(str((i/u).mean()))		
+		pbar.set_description_str(f'loss: {loss.item()}, iou: {batch_miou.item()}')
 		epoch_loss += loss.item()
 	epoch_loss /= len(trainloader)
 	epoch_miou /= len(trainloader)	
