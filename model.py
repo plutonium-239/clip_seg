@@ -69,7 +69,9 @@ class SegCLIP(nn.Module):
 		self.bn3 = nn.BatchNorm2d(64)
 		self.relu3 = nn.ReLU(inplace=True)
 		
-		self.fcnhead = fcn.FCNHead(in_channels = 64, channels = hidden_emb_depth)
+		# self.fcnhead = fcn.FCNHead(in_channels = 64, channels = hidden_emb_depth)
+		self.fcnheadconv = nn.Conv2d(in_channels = 64, out_channels = hidden_emb_depth, kernel_size=3, padding=2, dilation=2, bias=False)
+		self.fcnheadbn = nn.BatchNorm2d(hidden_emb_depth)
 
 	def forward(self, image, text):
 		image = image.type(self.clip.visual.conv1.weight.dtype)
@@ -120,7 +122,8 @@ class SegCLIP(nn.Module):
 		# image += identity
 		image = self.relu3(self.bn3(image))
 		
-		image = self.fcnhead(image)
+		image = self.fcnheadconv(image)
+		image = self.fcnheadbn(image)
 		# [num_classes, 224, 224]
 
 		'''
@@ -184,3 +187,18 @@ def load_custom_clip(model_name, num_classes, device=None):
 
 
 	return segCLIP.to(device), preproc, preproc_lbl
+
+
+def intersectionAndUnionGPU(output, target, K, ignore_index=255):
+    # 'K' classes, output and target sizes are N or N * L or N * H * W, each value in range 0 to K - 1.
+    assert (output.dim() in [1, 2, 3])
+    assert output.shape == target.shape
+    output = output.view(-1)
+    target = target.view(-1)
+    output[target == ignore_index] = ignore_index
+    intersection = output[output == target]
+    area_intersection = torch.histc(intersection, bins=K, min=0, max=K-1)
+    area_output = torch.histc(output, bins=K, min=0, max=K-1)
+    area_target = torch.histc(target, bins=K, min=0, max=K-1)
+    area_union = area_output + area_target - area_intersection
+    return area_intersection, area_union, area_target
