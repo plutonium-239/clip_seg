@@ -111,8 +111,8 @@ for epoch in tqdm(range(config['num_epochs'])):
 	writer.add_scalar('training loss', epoch_loss, epoch)
 	writer.add_scalar('epoch mIOU', epoch_miou, epoch)
 	# img_gt_mask = 
-	lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[1]], device=device)
-	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[2]], device=device)
+	lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[1]]).to(device)
+	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[2]]).to(device)
 	writer.add_images('img + GT', last_batch[0] | lbl)
 	writer.add_images('img + pred', last_batch[0] | pred)
 	final_miou += epoch_miou
