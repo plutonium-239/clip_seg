@@ -27,7 +27,7 @@ writer = SummaryWriter('runs/'+logdir)
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print('Running on', device)
+print('Running on', device, 'logging in', logdir)
 
 segclip, preproc, preproc_lbl = model.load_custom_clip('RN50', num_classes=5, device=device)
 segclip.to(device) # redundant
