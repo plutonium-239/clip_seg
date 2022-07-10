@@ -113,8 +113,8 @@ for epoch in tqdm(range(config['num_epochs'])):
 	# img_gt_mask = 
 	lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[1]]).to(device)
 	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[2]]).to(device)
-	writer.add_images('img + GT', (last_batch[0]*255).int() | (lbl*255).int())
-	writer.add_images('img + pred', (last_batch[0]*255).int() | (pred*255).int())
+	writer.add_images('img + GT', (last_batch[0]*255).int() | (lbl*255).int(), epoch)
+	writer.add_images('img + pred', (last_batch[0]*255).int() | (pred*255).int(), epoch)
 	final_miou += epoch_miou
 	final_loss = epoch_loss
 end = time.time()
