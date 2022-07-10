@@ -84,7 +84,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		# if i==0:
 		#   writer.add_graph(segclip, (batch_img, text_tokens))
 		output = segclip(batch_img, text_tokens)
-		print(output.min(), output.max())
+		# print(output.min(), output.max())
 		loss = loss_fn(output, batch_lbl)
 		loss.backward()
 		optimiser.step()
