@@ -124,6 +124,11 @@ class pascalVOCLoader(data.Dataset):
 		else:
 			text = self.template + ' and '.join(classes_lbl)
 		# print(text)
+		# print(im.min(), im.max())
+		# x_min, x_max = im.min(), im.max()
+		# im = (im - x_min) / (x_max-x_min)
+		# plt.imshow(im.permute(1,2,0))
+		# plt.show()
 		return im, lbl, text
 
 	def transform(self, img, lbl):
@@ -135,7 +140,11 @@ class pascalVOCLoader(data.Dataset):
 		# print(img.shape)
 		# print(lbl.shape)
 		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+		# plt.imshow(img)
+		# plt.show()
 		lbl = cv2.cvtColor(lbl, cv2.COLOR_BGR2RGB)
+		# plt.imshow(lbl)
+		# plt.show()
 		# print(img.dtype)
 		# print(transforms.ToTensor()(img))
 		img = self.tf(img)
@@ -208,14 +217,14 @@ class pascalVOCLoader(data.Dataset):
 			(np.ndarray, optional): the resulting decoded color image.
 		"""
 		label_colours = self.get_pascal_labels()
-		r = label_mask.copy()
-		g = label_mask.copy()
-		b = label_mask.copy()
+		r = label_mask.clone()
+		g = label_mask.clone()
+		b = label_mask.clone()
 		for ll in range(0, self.n_classes):
 			r[label_mask == ll] = label_colours[ll, 0]
 			g[label_mask == ll] = label_colours[ll, 1]
 			b[label_mask == ll] = label_colours[ll, 2]
-		rgb = np.zeros((label_mask.shape[0], label_mask.shape[1], 3))
+		rgb = torch.zeros((label_mask.shape[0], label_mask.shape[1], 3))
 		rgb[:, :, 0] = r / 255.0
 		rgb[:, :, 1] = g / 255.0
 		rgb[:, :, 2] = b / 255.0

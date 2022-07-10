@@ -26,6 +26,7 @@ logdir = 'run_%02d' % run_number
 writer = SummaryWriter('runs/'+logdir)
 
 
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
@@ -35,6 +36,8 @@ segclip.to(device) # redundant
 dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split=config['mode'], img_size=224, is_transform=True)
 trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
 
+img = torch.rand(4, 3, 224, 224)
+lbl = torch.randint(0, 5, (4, 224, 224))
 
 loss_fn = nn.CrossEntropyLoss()
 optimiser = torch.optim.Adam(segclip.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
@@ -78,6 +81,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 	epoch_miou = 0
 	pbar = tqdm(enumerate(trainloader), total=len(trainloader), leave=False)
 	t_sum = 0
+	last_batch = None 
 	for i, (batch_img, batch_lbl, texts) in pbar:
 		# times.append(t_diff)
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
@@ -88,21 +92,29 @@ for epoch in tqdm(range(config['num_epochs'])):
 		loss = loss_fn(output, batch_lbl)
 		loss.backward()
 		optimiser.step()
-		i,u,_ = intersectionAndUnionGPU(F.softmax(output, dim=1).argmax(dim=1), batch_lbl, output.shape[1])
-		batch_miou = i.sum()/u.sum().item()
+		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
+		inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
+		batch_miou = (inter.sum()/union.sum()).item()
 		# tqdm.write(str(i)+str(u))
 		epoch_miou += batch_miou
 		# tqdm.write(str(batch_miou))
 		# tqdm.write(str((i/u).mean()))		
 		pbar.set_description_str(f'loss: {loss.item()}, iou: {batch_miou}')
 		epoch_loss += loss.item()
+		if i==len(trainloader)-1:
+			last_batch = (batch_img, batch_pred, batch_lbl)
 	epoch_loss /= len(trainloader)
-	epoch_miou /= len(trainloader)	
+	epoch_miou /= len(trainloader)
 	tqdm.write(f'Epoch {epoch} loss: {epoch_loss}, mean mIOU: {epoch_miou}')
 	# plot = plt.plot(times)
 	# if epoch%10==9:
 	writer.add_scalar('training loss', epoch_loss, epoch)
 	writer.add_scalar('epoch mIOU', epoch_miou, epoch)
+	# img_gt_mask = 
+	lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[1]], device=device)
+	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[2]], device=device)
+	writer.add_images('img + GT', last_batch[0] | lbl)
+	writer.add_images('img + pred', last_batch[0] | pred)
 	final_miou += epoch_miou
 	final_loss = epoch_loss
 end = time.time()
@@ -113,7 +125,7 @@ print('End')
 print()
 # f = open('profile.txt','w')
 # f.write(prof.key_averages().table(sort_by="cpu_time_total"))
-writer.add_hparams(config, {'mean mIOU':final_miou, 'final loss': final_loss, 'total time': t_diff})
+writer.add_hparams(config, {'mean mIOU':final_miou, 'final loss': final_loss, 'total time': t_diff}, run_name='.')
 
 writer.close()
 torch.save(segclip.state_dict(), f'runs/{logdir}/model.pt')
