@@ -101,7 +101,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		# tqdm.write(str((i/u).mean()))		
 		pbar.set_description_str(f'loss: {loss.item()}, iou: {batch_miou}')
 		epoch_loss += loss.item()
-		if i==len(trainloader)-1:
+		if i==0:
 			last_batch = (batch_img, batch_pred, batch_lbl)
 	epoch_loss /= len(trainloader)
 	epoch_miou /= len(trainloader)
