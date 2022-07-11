@@ -1,8 +1,8 @@
 config = {
 	'mode': 'train',
-	'batch_size': 4,
+	'batch_size': 16,
 	'num_epochs': 50,
-	'num_workers': 4,
+	'num_workers': 8,
 
 	'lr': 1e-4,
 	'weight_decay': 0,
