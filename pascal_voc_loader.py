@@ -126,8 +126,8 @@ class pascalVOCLoader(data.Dataset):
 		# print(text)
 		# print(im.min(), im.max())
 		# x_min, x_max = im.min(), im.max()
-		# im = (im - x_min) / (x_max-x_min)
-		# plt.imshow(im.permute(1,2,0))
+		# ims = (im - x_min) / (x_max-x_min)
+		# plt.imshow(ims.permute(1,2,0))
 		# plt.show()
 		return im, lbl, text
 

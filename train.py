@@ -25,7 +25,10 @@ logdir = 'run_%02d' % run_number
 
 writer = SummaryWriter('runs/'+logdir)
 
-
+def norm_im(im):
+	x_min, x_max = batch_img.min(), batch_img.max()
+	ims = (batch_img - x_min) / (x_max-x_min)
+	return ims
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
@@ -113,13 +116,11 @@ for epoch in tqdm(range(config['num_epochs'])):
 	# img_gt_mask = 
 	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[1]]).to(device)
 	lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[2]]).to(device)
-	writer.add_images('img + GT', (last_batch[0]*255).int() | lbl.int(), 0)
-	writer.add_images('img + pred', (last_batch[0]*255).int() | pred.int(), epoch)
-	writer.add_images('img', last_batch[0], 0)
+	writer.add_images('img + GT', norm_im(last_batch[0]*255).int() | lbl.int(), 0)
+	writer.add_images('img + pred', norm_im(last_batch[0]*255).int() | pred.int(), epoch)
+	writer.add_images('img', norm_im(last_batch[0]), 0)
 	writer.add_images('GT', lbl, 0)
-	writer.add_images('GT b&w', last_batch[2].unsqueeze(1), 0)
 	writer.add_images('pred', pred, epoch)
-	writer.add_images('pred b&w', last_batch[1].unsqueeze(1), epoch)
 	final_miou += epoch_miou
 	final_loss = epoch_loss
 end = time.time()
