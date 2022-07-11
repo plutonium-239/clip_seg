@@ -1,6 +1,6 @@
 config = {
 	'mode': 'train',
-	'batch_size': 1,
+	'batch_size': 4,
 	'num_epochs': 50,
 	'num_workers': 0,
 
