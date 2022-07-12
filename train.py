@@ -24,6 +24,13 @@ else:
 logdir = 'run_%02d' % run_number
 
 writer = SummaryWriter('runs/'+logdir)
+layout = {
+	"Loss and mIOU for train and val": {
+		"loss": ["Multiline", ["loss/train", "loss/val"]],
+		"miou": ["Multiline", ["miou/train", "miou/val"]],
+	},
+}
+writer.add_custom_scalars(layout)
 
 def norm_im(im):
 	x_min, x_max = batch_img.min(), batch_img.max()
@@ -102,7 +109,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		epoch_miou_t += batch_miou
 		# tqdm.write(str(batch_miou))
 		# tqdm.write(str((i/u).mean()))		
-		pbar.set_description_str(f'train loss: {loss.item()}, iou: {batch_miou}')
+		pbar.set_description_str(f'train loss: {loss.item():.4f}, iou: {batch_miou:.4f}')
 		epoch_loss_t += loss.item()
 		# if i==len(trainloader)-1:
 		# 	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
@@ -134,7 +141,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		epoch_miou_v += batch_miou
 		# tqdm.write(str(batch_miou))
 		# tqdm.write(str((i/u).mean()))		
-		pbar2.set_description_str(f'val loss: {loss.item()}, iou: {batch_miou}')
+		pbar2.set_description_str(f'val loss: {loss.item():.4f}, iou: {batch_miou:.4f}')
 		epoch_loss_v += loss.item()
 		if i==len(valloader)-1 and epoch%5==4:
 			pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
