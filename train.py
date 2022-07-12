@@ -104,8 +104,14 @@ for epoch in tqdm(range(config['num_epochs'])):
 		# tqdm.write(str((i/u).mean()))		
 		pbar.set_description_str(f'loss: {loss.item()}, iou: {batch_miou}')
 		epoch_loss += loss.item()
-		if i==0:
-			last_batch = (batch_img, batch_pred, batch_lbl)
+		if i==len(trainloader)-1:
+			pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
+			lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_lbl]).to(device)
+			writer.add_images('img + GT', (norm_im(batch_img)*255).int() | lbl.int(), epoch)
+			writer.add_images('img + pred', (norm_im(batch_img)*255).int() | pred.int(), epoch)
+			writer.add_images('img', norm_im(batch_img), epoch)
+			writer.add_images('GT', lbl, epoch)
+			writer.add_images('pred', pred, epoch)
 	epoch_loss /= len(trainloader)
 	epoch_miou /= len(trainloader)
 	tqdm.write(f'Epoch {epoch} loss: {epoch_loss}, mean mIOU: {epoch_miou}')
@@ -114,13 +120,6 @@ for epoch in tqdm(range(config['num_epochs'])):
 	writer.add_scalar('training loss', epoch_loss, epoch)
 	writer.add_scalar('epoch mIOU', epoch_miou, epoch)
 	# img_gt_mask = 
-	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[1]]).to(device)
-	lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in last_batch[2]]).to(device)
-	writer.add_images('img + GT', (norm_im(last_batch[0])*255).int() | lbl.int(), epoch)
-	writer.add_images('img + pred', (norm_im(last_batch[0])*255).int() | pred.int(), epoch)
-	writer.add_images('img', norm_im(last_batch[0]), epoch)
-	writer.add_images('GT', lbl, epoch)
-	writer.add_images('pred', pred, epoch)
 	final_miou += epoch_miou
 	final_loss = epoch_loss
 end = time.time()
