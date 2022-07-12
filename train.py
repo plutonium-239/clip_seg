@@ -84,7 +84,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 	epoch_loss_t = 0
 	epoch_miou_t = 0
 	pbar = tqdm(enumerate(trainloader), total=len(trainloader), leave=False)
-	model.train()
+	segclip.train()
 	for i, (batch_img, batch_lbl, texts) in pbar:
 		# times.append(t_diff)
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
@@ -115,11 +115,11 @@ for epoch in tqdm(range(config['num_epochs'])):
 	epoch_loss_t /= len(trainloader)
 	epoch_miou_t /= len(trainloader)
 
-	model.eval()
+	segclip.eval()
 	epoch_miou_v = 0
 	epoch_loss_v = 0
 	pbar2 = tqdm(enumerate(valloader), total=len(valloader), leave=False)
-	for i, (batch_img, batch_lbl, texts) in pbar:
+	for i, (batch_img, batch_lbl, texts) in pbar2:
 		# times.append(t_diff)
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:
@@ -134,7 +134,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		epoch_miou_v += batch_miou
 		# tqdm.write(str(batch_miou))
 		# tqdm.write(str((i/u).mean()))		
-		pbar.set_description_str(f'val loss: {loss.item()}, iou: {batch_miou}')
+		pbar2.set_description_str(f'val loss: {loss.item()}, iou: {batch_miou}')
 		epoch_loss_v += loss.item()
 		if i==len(valloader)-1:
 			pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
@@ -146,7 +146,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 			writer.add_images('pred', pred, epoch)
 	epoch_loss_v /= len(valloader)
 	epoch_miou_v /= len(valloader)
-	tqdm.write(f'(train/val) Epoch {epoch} loss: t{epoch_loss_t}/{epoch_loss_v}, mean mIOU: {epoch_miou_t}/{epoch_miou_v}')
+	tqdm.write(f'(train/val) Epoch {epoch} loss: {epoch_loss_t:.4f}/{epoch_loss_v:.4f}, mean mIOU: {epoch_miou_t:.4f}/{epoch_miou_v:.4f}')
 	
 	writer.add_scalars('loss', {'train': epoch_loss_t, 'val': epoch_loss_v}, epoch)
 	writer.add_scalars('miou', {'train': epoch_miou_t, 'val': epoch_miou_v}, epoch)
