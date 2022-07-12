@@ -2,3 +2,4 @@ __pycache__/
 runs/
 config.py
 train_win.py
+batch/
