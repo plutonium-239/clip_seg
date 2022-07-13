@@ -33,8 +33,8 @@ layout = {
 writer.add_custom_scalars(layout)
 
 def norm_im(im):
-	x_min, x_max = batch_img.min(), batch_img.max()
-	ims = (batch_img - x_min) / (x_max-x_min)
+	x_min, x_max = im.min(), im.max()
+	ims = (im - x_min) / (x_max-x_min)
 	return ims
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -143,7 +143,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		# tqdm.write(str((i/u).mean()))		
 		pbar2.set_description_str(f'val loss: {loss.item():.4f}, iou: {batch_miou:.4f}')
 		epoch_loss_v += loss.item()
-		if i==len(valloader)-1 and epoch%5==4:
+		if i==len(valloader)-2 and epoch%5==4:
 			pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
 			lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_lbl]).to(device)
 			writer.add_images('img + GT', (norm_im(batch_img)*255).int() | lbl.int(), epoch)
