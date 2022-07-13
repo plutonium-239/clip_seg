@@ -34,7 +34,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
 segclip, preproc, preproc_lbl = model.load_custom_clip('RN50', num_classes=5, device=device)
-segclip.load_state_dict(f"runs/run_{config['runid']}/model.pt")
+segclip.load_state_dict(torch.load(f"runs/run_{config['runid']}/model.pt"))
 segclip.to(device) # redundant
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
