@@ -21,7 +21,7 @@ from model import intersectionAndUnionGPU
 # else:
 # 	run_number = max([int(s.split('run_')[1]) for s in previous_runs]) + 1
 
-logdir = 'run_{}' % config['runid']
+logdir = f"run_{config['runid']}"
 
 writer = SummaryWriter('images/'+logdir)
 
