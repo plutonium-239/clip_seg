@@ -78,6 +78,7 @@ img, lbl, _ = next(iter(valloader))
 img, lbl = img.to(device), lbl.to(device)
 
 pred = segclip(img, text_tokens)
+pred = F.softmax(pred, dim=1).argmax(dim=1)
 pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
 lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
 
