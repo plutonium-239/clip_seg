@@ -14,11 +14,11 @@ class Identity(nn.Module):
 
 
 class SegCLIP(nn.Module):
-	def __init__(self, clip_encoder, num_classes, hidden_emb_depth):
+	def __init__(self, clip_encoder, hidden_emb_depth):
 		super().__init__()
 		# self.clip_visual = clip_encoder.visual
 		self.clip = clip_encoder # only for the text part 
-		self.num_classes = num_classes
+		# self.num_classes = num_classes
 		self.embed_dim = hidden_emb_depth
 		'''
 		Layer (type:depth-idx)                   Output Shape
@@ -133,6 +133,7 @@ class SegCLIP(nn.Module):
 		we want -> [1, num_classes, 224, 224]
 		'''
 		ish = image.shape
+		print(ish)
 		image = image.permute(0,2,3,1).reshape(-1, image.shape[1]) # linearize for faster dot product
 		x = image @ text.t() # [1*224*224, 1024] dot [1024, num_classes] = [1*224*224, num_classes]
 		x = x.reshape(ish[0], ish[2], ish[3], -1).permute(0,3,1,2)
@@ -143,7 +144,7 @@ class SegCLIP(nn.Module):
 
 
 
-def load_custom_clip(model_name, num_classes, device=None):
+def load_custom_clip(model_name, device=None):
 	'''
 	Function to load 'model_name' from clip and adapt it for segmentation
 	Returns:
@@ -169,18 +170,21 @@ def load_custom_clip(model_name, num_classes, device=None):
 	We can call `cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)` and remove that from preprocess
 	'''
 	embed_dim =  model.text_projection.shape[1]
-	segCLIP = SegCLIP(model, num_classes, embed_dim)
+	segCLIP = SegCLIP(model, embed_dim)
 	preprocess.transforms.pop(2) # convert_to_rgb
 	preprocess.transforms.pop(2) # ToTensor
-	preprocess.transforms[0] = tf.Resize(size=224, interpolation=tf.InterpolationMode.BICUBIC)
+	# preprocess.transforms[0] = tf.Resize(size=224, interpolation=tf.InterpolationMode.BICUBIC)
+	preprocess.transforms[0] = tf.Resize(size=512, interpolation=tf.InterpolationMode.BICUBIC)
+	preprocess.transforms[1] = tf.CenterCrop(size=(512,512))
 	preproc = lambda x: preprocess( tf.ToTensor()(x) )
 	preprocess_label = tf.Compose([])
 	preprocess_label.transforms = preprocess.transforms.copy()
 	# label cant be interpolated normally, use nearest neighbor interpolation to keep integer values
-	preprocess_label.transforms[0] = tf.Resize(size=224, interpolation=tf.InterpolationMode.NEAREST)
+	# preprocess_label.transforms[0] = tf.Resize(size=224, interpolation=tf.InterpolationMode.NEAREST)
+	preprocess_label.transforms[0] = tf.Resize(size=512, interpolation=tf.InterpolationMode.NEAREST)
 	preprocess_label.transforms.pop(-1) # no normalization for label
 	preproc_lbl = lambda x: preprocess_label(torch.tensor(x).unsqueeze(0)).squeeze(0)
-
+	print(preprocess, preprocess_label)
 
 	return segCLIP.to(device), preproc, preproc_lbl
 

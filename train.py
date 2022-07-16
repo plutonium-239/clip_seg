@@ -40,7 +40,7 @@ def norm_im(im):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
-segclip, preproc, preproc_lbl = model.load_custom_clip('RN50', num_classes=5, device=device)
+segclip, preproc, preproc_lbl = model.load_custom_clip('RN50', device=device)
 segclip.to(device) # redundant
 
 dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
