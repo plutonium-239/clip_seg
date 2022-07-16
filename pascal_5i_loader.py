@@ -11,7 +11,7 @@ import cv2
 from tqdm import tqdm
 
 
-class Pascal5iReader(torchvision.datasets.vision.VisionDataset):
+class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 	"""
 	pascal_5i dataset reader
 	Parameters:
@@ -21,7 +21,7 @@ class Pascal5iReader(torchvision.datasets.vision.VisionDataset):
 	"""
 
 	def __init__(self, root, fold, preproc, preproc_lbl, train=True):
-		super(Pascal5iReader, self).__init__(root, None, None, None)
+		super(Pascal5iLoader, self).__init__(root, None, None, None)
 		assert fold >= 0 and fold <= 3
 		self.train = train
 

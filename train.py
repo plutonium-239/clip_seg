@@ -3,13 +3,14 @@ import clip
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pascal_voc_loader import pascalVOCLoader
+# from pascal_voc_loader import pascalVOCLoader
+from pascal_5i_loader import Pascal5iLoader
 from config import config
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import time
-import os
+import os,sys
 import subprocess # for uploading tensorboard
 from torch.profiler import profile, record_function, ProfilerActivity
 import matplotlib.pyplot as plt
@@ -43,10 +44,15 @@ print('Running on', device, 'logging in', logdir)
 segclip, preproc, preproc_lbl = model.load_custom_clip('RN50', device=device)
 segclip.to(device) # redundant
 
-dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
+if len(sys.argv)>1:
+	config['fold'] = int(sys.argv[2])
+
+# dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
+dataset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=preproc, preproc_lbl=preproc_lbl)
 trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
 
-valset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='val', img_size=224, is_transform=True)
+# valset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='val', img_size=224, is_transform=True)
+valset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=preproc, preproc_lbl=preproc_lbl, train=False)
 valloader = DataLoader(valset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
 
 loss_fn = nn.CrossEntropyLoss()
@@ -92,7 +98,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 	epoch_miou_t = 0
 	pbar = tqdm(enumerate(trainloader), total=len(trainloader), leave=False)
 	segclip.train()
-	for i, (batch_img, batch_lbl, texts) in pbar:
+	for i, (batch_img, batch_lbl) in pbar:
 		# times.append(t_diff)
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:
@@ -126,7 +132,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 	epoch_miou_v = 0
 	epoch_loss_v = 0
 	pbar2 = tqdm(enumerate(valloader), total=len(valloader), leave=False)
-	for i, (batch_img, batch_lbl, texts) in pbar2:
+	for i, (batch_img, batch_lbl) in pbar2:
 		# times.append(t_diff)
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:

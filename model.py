@@ -53,7 +53,7 @@ class SegCLIP(nn.Module):
 		'''
 		# to remove the Attention Pool layer (replace with identity)
 		# self.clip_encoder.visual.attnpool = Identity()
-		width = 224
+		width = 512
 		self.up1 = nn.Upsample((width//8,width//8))
 		self.conv1 = nn.Conv2d(in_channels = 2048, out_channels = 512, kernel_size=3, padding=2, dilation=2, bias=False)
 		self.bn1 = nn.BatchNorm2d(512)
