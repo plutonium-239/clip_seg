@@ -133,7 +133,7 @@ class SegCLIP(nn.Module):
 		we want -> [1, num_classes, 224, 224]
 		'''
 		ish = image.shape
-		print(ish)
+		# print(ish)
 		image = image.permute(0,2,3,1).reshape(-1, image.shape[1]) # linearize for faster dot product
 		x = image @ text.t() # [1*224*224, 1024] dot [1024, num_classes] = [1*224*224, num_classes]
 		x = x.reshape(ish[0], ish[2], ish[3], -1).permute(0,3,1,2)
