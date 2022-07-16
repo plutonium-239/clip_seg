@@ -218,7 +218,7 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 
 		target_np = self.load_seg_mask(self.targets[idx])
 		target_np = self.set_bg_pixel(target_np)
-		target_np = self.preproc_lbl(target_np)
+		target_np = self.preproc_lbl(target_np).long()
 
 		return img, target_np
 
