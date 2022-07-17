@@ -271,3 +271,29 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 			label_mask[np.where(np.all(mask == label, axis=-1))[:2]] = ii
 		label_mask = label_mask.astype(int)
 		return label_mask
+
+	def decode_segmap(self, label_mask):
+		"""Decode segmentation class labels into a color image
+
+		Args:
+			label_mask (np.ndarray): an (M,N) array of integer values denoting
+			  the class label at each spatial location.
+			plot (bool, optional): whether to show the resulting color image
+			  in a figure.
+
+		Returns:
+			(np.ndarray, optional): the resulting decoded color image.
+		"""
+		label_colours = self.get_pascal_labels()
+		r = label_mask.clone()
+		g = label_mask.clone()
+		b = label_mask.clone()
+		for ll in range(0, self.n_classes):
+			r[label_mask == ll] = label_colours[ll, 0]
+			g[label_mask == ll] = label_colours[ll, 1]
+			b[label_mask == ll] = label_colours[ll, 2]
+		rgb = torch.zeros((label_mask.shape[0], label_mask.shape[1], 3))
+		rgb[:, :, 0] = r / 255.0
+		rgb[:, :, 1] = g / 255.0
+		rgb[:, :, 2] = b / 255.0
+		return rgb
