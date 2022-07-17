@@ -164,6 +164,8 @@ with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
 				# writer.add_images('img', norm_im(batch_img), epoch)
 				# writer.add_images('GT', lbl, epoch)
 				# writer.add_images('pred', pred, epoch)
+			if i>10:
+				break
 		epoch_loss_v /= len(valloader)
 		epoch_miou_v /= len(valloader)
 		tqdm.write(f'(train/val) Epoch {epoch} loss: {epoch_loss_t:.4f}/{epoch_loss_v:.4f}, mean mIOU: {epoch_miou_t:.4f}/{epoch_miou_v:.4f}')
