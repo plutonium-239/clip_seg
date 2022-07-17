@@ -55,16 +55,16 @@ class SegCLIP(nn.Module):
 		# self.clip_encoder.visual.attnpool = Identity()
 		self.up1 = nn.Upsample(scale_factor=4)
 		self.conv1 = nn.Conv2d(in_channels = 2048, out_channels = 512, kernel_size=3, padding=2, dilation=2, bias=False)
-		self.bn1 = nn.BatchNorm2d(512)
+		self.bn1 = nn.BatchNorm2d(1024)
 		self.relu1 = nn.ReLU(inplace=True)
 
 		self.up2 = nn.Upsample(scale_factor=2)
-		self.conv2 = nn.Conv2d(in_channels = 512, out_channels = 256, kernel_size=3, padding=2, dilation=2, bias=False)
-		self.bn2 = nn.BatchNorm2d(256)
+		self.conv2 = nn.Conv2d(in_channels = 1024, out_channels = 256, kernel_size=3, padding=2, dilation=2, bias=False)
+		self.bn2 = nn.BatchNorm2d(512)
 		self.relu2 = nn.ReLU(inplace=True)
 
 		self.up3 = nn.Upsample(scale_factor=4)
-		self.conv3 = nn.Conv2d(in_channels = 256, out_channels = 64, kernel_size=3, padding=2, dilation=2, bias=False)
+		self.conv3 = nn.Conv2d(in_channels = 512, out_channels = 64, kernel_size=3, padding=2, dilation=2, bias=False)
 		self.bn3 = nn.BatchNorm2d(64)
 		self.relu3 = nn.ReLU(inplace=True)
 		
@@ -105,13 +105,13 @@ class SegCLIP(nn.Module):
 		image = self.up1(image)
 		image = self.conv1(image)
 		# [1, 512, 28, 28]
-		image += res2
+		image = torch.cat([image, res2], dim=1)
 		image = self.relu1(self.bn1(image))
 		
 		image = self.up2(image)
 		image = self.conv2(image)
 		# [1, 256, 56, 56]
-		image += res
+		image = torch.cat([image, res], dim=1)
 		image = self.relu2(self.bn2(image))
 		
 		image = self.up3(image)

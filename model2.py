@@ -55,17 +55,17 @@ class SegCLIP(nn.Module):
 		# self.clip_encoder.visual.attnpool = Identity()
 		self.up1 = nn.Upsample(scale_factor=2)
 		self.conv1 = nn.Conv2d(in_channels = 2048, out_channels = 1024, kernel_size=3, padding=2, dilation=2, bias=False)
-		self.bn1 = nn.BatchNorm2d(1024)
+		self.bn1 = nn.BatchNorm2d(2048)
 		self.relu1 = nn.ReLU(inplace=True)
 
 		self.up2 = nn.Upsample(scale_factor=4)
-		self.conv2 = nn.Conv2d(in_channels = 1024, out_channels = 1024, kernel_size=3, padding=2, dilation=2, bias=False)
-		self.bn2 = nn.BatchNorm2d(256)
+		self.conv2 = nn.Conv2d(in_channels = 2048, out_channels = 768, kernel_size=3, padding=2, dilation=2, bias=False)
+		self.bn2 = nn.BatchNorm2d(1024)
 		self.relu2 = nn.ReLU(inplace=True)
 
 		self.up3 = nn.Upsample(scale_factor=4)
 		self.conv3 = nn.Conv2d(in_channels = num_classes, out_channels = num_classes, kernel_size=3, padding=2, dilation=2, bias=False)
-		self.bn3 = nn.BatchNorm2d(64)
+		self.bn3 = nn.BatchNorm2d(num_classes)
 		# self.relu3 = nn.ReLU(inplace=True)
 		
 		# # self.fcnhead = fcn.FCNHead(in_channels = 64, channels = hidden_emb_depth)
@@ -87,31 +87,32 @@ class SegCLIP(nn.Module):
 			text = self.clip.encode_text(text)
 	
 			image = stem(image)
-			# [1, 64, 56, 56]
+			# [1, 64, 56, 56] | [1, 64, 128, 128]
 			image = self.clip.visual.layer1(image)
 			res = image.clone()
-			# [1, 256, 56, 56]
+			# [1, 256, 56, 56] | [1, 256, 128, 128]
 			image = self.clip.visual.layer2(image)
-			res2 = image.clone()
-			# [1, 512, 28, 28]
+			# res2 = image.clone()
+			# [1, 512, 28, 28] | [1, 512, 64, 64]
 			image = self.clip.visual.layer3(image)
-			# [1, 1024, 14, 14]
+			res3 = image.clone()
+			# [1, 1024, 14, 14] | [1, 1024, 32, 32]
 			image = self.clip.visual.layer4(image)
-			# [1, 2048, 7, 7]
+			# [1, 2048, 7, 7] | [1, 2048, 16, 16]
 
 		# removing attnpool
 		# image = self.clip_encoder.visual.attnpool(image)
 		
 		image = self.up1(image)
 		image = self.conv1(image)
-		# [1, 512, 28, 28]
-		image += res2
+		# [1, 1024, 14, 14] | [1, 1024, 32, 32]
+		image = torch.cat([image, res3], dim=1)
 		image = self.relu1(self.bn1(image))
 		
 		image = self.up2(image)
 		image = self.conv2(image)
-		# [1, 256, 56, 56]
-		image += res
+		# [1, 1024, 56, 56] | [1, 1024, 128, 128]
+		image = torch.cat([image,res], dim=1)
 		image = self.relu2(self.bn2(image))
 		'''
 		image -> [1, 1024, 128, 128]
@@ -122,8 +123,8 @@ class SegCLIP(nn.Module):
 		ish = image.shape
 		# print(ish)
 		image = image.permute(0,2,3,1).reshape(-1, image.shape[1]) # linearize for faster dot product
-		x = image @ text.t() # [1*128*128, 1024] dot [1024, num_classes] = [1*128*128, num_classes]
-		x = x.reshape(ish[0], ish[2], ish[3], -1).permute(0,3,1,2)
+		image = image @ text.t() # [1*128*128, 1024] dot [1024, num_classes] = [1*128*128, num_classes]
+		image = image.reshape(ish[0], ish[2], ish[3], -1).permute(0,3,1,2)
 		
 		image = self.up3(image)
 		image = self.conv3(image)
@@ -138,7 +139,7 @@ class SegCLIP(nn.Module):
 		# [num_classes, 224, 224]
 
 
-		return x
+		return image
 		
 
 
