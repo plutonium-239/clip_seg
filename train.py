@@ -177,8 +177,11 @@ with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
 		final_miou_t += epoch_miou_t
 		final_miou_v += epoch_miou_v
 		final_loss = epoch_loss_v
-# f = open('profile.txt','w')
-# f.write(prof.key_averages().table(sort_by="cpu_time_total"))
+print('ct')
+prof.export_chrome_trace('profile/'+logdir+'.trace')
+f = open('profile/'+logdir+'.txt','w')
+print('ka')
+f.write(prof.key_averages().table(sort_by="cpu_time_total"))
 end = time.time()
 t_diff = end - start
 final_miou_t /= config['num_epochs']
