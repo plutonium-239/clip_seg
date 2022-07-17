@@ -114,8 +114,28 @@ with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
 				optimiser.step()
 			with record_function('softmax-argmax'):
 				batch_pred = F.softmax(output, dim=1).argmax(dim=1)
-			with record_function('miou'):
-				inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
+			with record_function('miou-assert'):
+				# inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
+				K = output.shape[1]
+				ignore_index=255
+				assert (batch_pred.dim() in [1, 2, 3])
+				assert batch_pred.shape == batch_lbl.shape
+			with record_function('miou-view'):
+				batch_pred = batch_pred.view(-1)
+				batch_lbl = batch_lbl.view(-1)
+			with record_function('miou-slicing'):
+				batch_pred[batch_lbl == ignore_index] = ignore_index
+			with record_function('miou-slicing2'):
+				intersection = batch_pred[batch_pred == batch_lbl]
+			with record_function('miou-histc1'):
+				area_intersection = torch.histc(intersection, bins=K, min=0, max=K-1)
+			with record_function('miou-histc2'):
+				area_output = torch.histc(batch_pred, bins=K, min=0, max=K-1)
+			with record_function('miou-histc3'):
+				area_target = torch.histc(batch_lbl, bins=K, min=0, max=K-1)
+			with record_function('miou-sum'):
+				area_union = area_output + area_target - area_intersection
+				inter,union,_ = area_intersection, area_union, area_target
 			with record_function('misc'):
 				batch_miou = (inter.sum()/union.sum()).item()
 				# tqdm.write(str(i)+str(u))
@@ -132,7 +152,7 @@ with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
 			# 	writer.add_images('img', norm_im(batch_img), epoch)
 			# 	writer.add_images('GT', lbl, epoch)
 			# 	writer.add_images('pred', pred, epoch)
-			if i==10:
+			if i==9:
 				break
 		epoch_loss_t /= len(trainloader)
 		epoch_miou_t /= len(trainloader)
