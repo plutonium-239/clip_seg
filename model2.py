@@ -14,7 +14,7 @@ class Identity(nn.Module):
 
 
 class SegCLIP(nn.Module):
-	def __init__(self, clip_encoder, hidden_emb_depth):
+	def __init__(self, clip_encoder, hidden_emb_depth, num_classes):
 		super().__init__()
 		# self.clip_visual = clip_encoder.visual
 		self.clip = clip_encoder # only for the text part 
@@ -53,24 +53,24 @@ class SegCLIP(nn.Module):
 		'''
 		# to remove the Attention Pool layer (replace with identity)
 		# self.clip_encoder.visual.attnpool = Identity()
-		self.up1 = nn.Upsample(scale_factor=4)
-		self.conv1 = nn.Conv2d(in_channels = 2048, out_channels = 512, kernel_size=3, padding=2, dilation=2, bias=False)
-		self.bn1 = nn.BatchNorm2d(512)
+		self.up1 = nn.Upsample(scale_factor=2)
+		self.conv1 = nn.Conv2d(in_channels = 2048, out_channels = 1024, kernel_size=3, padding=2, dilation=2, bias=False)
+		self.bn1 = nn.BatchNorm2d(1024)
 		self.relu1 = nn.ReLU(inplace=True)
 
-		self.up2 = nn.Upsample(scale_factor=2)
-		self.conv2 = nn.Conv2d(in_channels = 512, out_channels = 256, kernel_size=3, padding=2, dilation=2, bias=False)
+		self.up2 = nn.Upsample(scale_factor=4)
+		self.conv2 = nn.Conv2d(in_channels = 1024, out_channels = 1024, kernel_size=3, padding=2, dilation=2, bias=False)
 		self.bn2 = nn.BatchNorm2d(256)
 		self.relu2 = nn.ReLU(inplace=True)
 
 		self.up3 = nn.Upsample(scale_factor=4)
-		self.conv3 = nn.Conv2d(in_channels = 256, out_channels = 64, kernel_size=3, padding=2, dilation=2, bias=False)
+		self.conv3 = nn.Conv2d(in_channels = num_classes, out_channels = num_classes, kernel_size=3, padding=2, dilation=2, bias=False)
 		self.bn3 = nn.BatchNorm2d(64)
-		self.relu3 = nn.ReLU(inplace=True)
+		# self.relu3 = nn.ReLU(inplace=True)
 		
-		# self.fcnhead = fcn.FCNHead(in_channels = 64, channels = hidden_emb_depth)
-		self.fcnheadconv = nn.Conv2d(in_channels = 64, out_channels = hidden_emb_depth, kernel_size=3, padding=2, dilation=2, bias=False)
-		self.fcnheadbn = nn.BatchNorm2d(hidden_emb_depth)
+		# # self.fcnhead = fcn.FCNHead(in_channels = 64, channels = hidden_emb_depth)
+		# self.fcnheadconv = nn.Conv2d(in_channels = 64, out_channels = hidden_emb_depth, kernel_size=3, padding=2, dilation=2, bias=False)
+		# self.fcnheadbn = nn.BatchNorm2d(hidden_emb_depth)
 
 	def forward(self, image, text):
 		image = image.type(self.clip.visual.conv1.weight.dtype)
@@ -113,29 +113,30 @@ class SegCLIP(nn.Module):
 		# [1, 256, 56, 56]
 		image += res
 		image = self.relu2(self.bn2(image))
+		'''
+		image -> [1, 1024, 128, 128]
+		text -> [num_classes, 1024]
+
+		we want -> [1, num_classes, 128, 128]
+		'''
+		ish = image.shape
+		# print(ish)
+		image = image.permute(0,2,3,1).reshape(-1, image.shape[1]) # linearize for faster dot product
+		x = image @ text.t() # [1*128*128, 1024] dot [1024, num_classes] = [1*128*128, num_classes]
+		x = x.reshape(ish[0], ish[2], ish[3], -1).permute(0,3,1,2)
 		
 		image = self.up3(image)
 		image = self.conv3(image)
 		# [1, 64, 224, 224]
 		# cannot do this since identity has only 3 channels
 		# image += identity
-		image = self.relu3(self.bn3(image))
+		# image = self.relu3(self.bn3(image))
+		image = self.bn3(image)
 		
-		image = self.fcnheadconv(image)
-		image = self.fcnheadbn(image)
+		# image = self.fcnheadconv(image)
+		# image = self.fcnheadbn(image)
 		# [num_classes, 224, 224]
 
-		'''
-		image -> [1, 1024, 224, 224]
-		text -> [num_classes, 1024]
-
-		we want -> [1, num_classes, 224, 224]
-		'''
-		ish = image.shape
-		# print(ish)
-		image = image.permute(0,2,3,1).reshape(-1, image.shape[1]) # linearize for faster dot product
-		x = image @ text.t() # [1*224*224, 1024] dot [1024, num_classes] = [1*224*224, num_classes]
-		x = x.reshape(ish[0], ish[2], ish[3], -1).permute(0,3,1,2)
 
 		return x
 		
@@ -143,7 +144,7 @@ class SegCLIP(nn.Module):
 
 
 
-def load_custom_clip(model_name, img_size=224, device=None):
+def load_custom_clip(model_name, num_classes, img_size=224, device=None):
 	'''
 	Function to load 'model_name' from clip and adapt it for segmentation
 	Returns:
@@ -169,7 +170,7 @@ def load_custom_clip(model_name, img_size=224, device=None):
 	We can call `cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)` and remove that from preprocess
 	'''
 	embed_dim =  model.text_projection.shape[1]
-	segCLIP = SegCLIP(model, embed_dim)
+	segCLIP = SegCLIP(model, embed_dim, num_classes)
 	preprocess.transforms.pop(2) # convert_to_rgb
 	preprocess.transforms.pop(2) # ToTensor
 	# preprocess.transforms[0] = tf.Resize(size=224, interpolation=tf.InterpolationMode.BICUBIC)
