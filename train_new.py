@@ -1,4 +1,4 @@
-import model2
+from models import model2
 import clip
 import torch
 import torch.nn as nn

@@ -1,4 +1,4 @@
-import model
+from models import model_orig
 import clip
 import torch
 import torch.nn as nn
@@ -14,7 +14,7 @@ import os,sys
 import subprocess # for uploading tensorboard
 from torch.profiler import profile, record_function, ProfilerActivity
 import matplotlib.pyplot as plt
-from model import intersectionAndUnionGPU
+from models.model import intersectionAndUnionGPU
 
 previous_runs = os.listdir('runs')
 if len(previous_runs) == 0:
@@ -41,7 +41,7 @@ def norm_im(im):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
-segclip, preproc, preproc_lbl = model.load_custom_clip('RN50', device=device, img_size=224)
+segclip, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=224)
 segclip.to(device) # redundant
 
 if len(sys.argv)>1:
@@ -88,89 +88,93 @@ text_tokens = clip.tokenize(pascal_labels).to(device)
 final_loss = 0
 final_miou_t = 0
 final_miou_v = 0
-# with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
-	# with record_function("model_inference"):
 start = time.time()
 
-for epoch in tqdm(range(config['num_epochs'])):
-	# tqdm.write(f'Epoch {epoch} started.')
-	epoch_loss_t = 0
-	epoch_miou_t = 0
-	pbar = tqdm(enumerate(trainloader), total=len(trainloader), leave=False)
-	segclip.train()
-	for i, (batch_img, batch_lbl) in pbar:
-		# times.append(t_diff)
-		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
-		# if i==0:
-		#   writer.add_graph(segclip, (batch_img, text_tokens))
-		output = segclip(batch_img, text_tokens)
-		# print(output.min(), output.max())
-		loss = loss_fn(output, batch_lbl)
-		loss.backward()
-		optimiser.step()
-		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
-		inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
-		batch_miou = (inter.sum()/union.sum()).item()
-		# tqdm.write(str(i)+str(u))
-		epoch_miou_t += batch_miou
-		# tqdm.write(str(batch_miou))
-		# tqdm.write(str((i/u).mean()))		
-		pbar.set_description_str(f'train loss: {loss.item():.4f}, iou: {batch_miou:.4f}')
-		epoch_loss_t += loss.item()
-		# if i==len(trainloader)-1:
-		# 	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
-		# 	lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_lbl]).to(device)
-		# 	writer.add_images('img + GT', (norm_im(batch_img)*255).int() | lbl.int(), epoch)
-		# 	writer.add_images('img + pred', (norm_im(batch_img)*255).int() | pred.int(), epoch)
-		# 	writer.add_images('img', norm_im(batch_img), epoch)
-		# 	writer.add_images('GT', lbl, epoch)
-		# 	writer.add_images('pred', pred, epoch)
-	epoch_loss_t /= len(trainloader)
-	epoch_miou_t /= len(trainloader)
+with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
+	with record_function("one epoch total"):
+		for epoch in tqdm(range(config['num_epochs'])):
+			# tqdm.write(f'Epoch {epoch} started.')
+			epoch_loss_t = 0
+			epoch_miou_t = 0
+			pbar = tqdm(enumerate(trainloader), total=len(trainloader), leave=False)
+			segclip.train()
+			for i, (batch_img, batch_lbl) in pbar:
+				# times.append(t_diff)
+				batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
+				# if i==0:
+				#   writer.add_graph(segclip, (batch_img, text_tokens))
+				output = segclip(batch_img, text_tokens)
+				# print(output.min(), output.max())
+				loss = loss_fn(output, batch_lbl)
+				loss.backward()
+				optimiser.step()
+				batch_pred = F.softmax(output, dim=1).argmax(dim=1)
+				inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
+				batch_miou = (inter.sum()/union.sum()).item()
+				# tqdm.write(str(i)+str(u))
+				epoch_miou_t += batch_miou
+				# tqdm.write(str(batch_miou))
+				# tqdm.write(str((i/u).mean()))		
+				pbar.set_description_str(f'train loss: {loss.item():.4f}, iou: {batch_miou:.4f}')
+				epoch_loss_t += loss.item()
+				# if i==len(trainloader)-1:
+				# 	pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
+				# 	lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_lbl]).to(device)
+				# 	writer.add_images('img + GT', (norm_im(batch_img)*255).int() | lbl.int(), epoch)
+				# 	writer.add_images('img + pred', (norm_im(batch_img)*255).int() | pred.int(), epoch)
+				# 	writer.add_images('img', norm_im(batch_img), epoch)
+				# 	writer.add_images('GT', lbl, epoch)
+				# 	writer.add_images('pred', pred, epoch)
+			epoch_loss_t /= len(trainloader)
+			epoch_miou_t /= len(trainloader)
 
-	segclip.eval()
-	epoch_miou_v = 0
-	epoch_loss_v = 0
-	pbar2 = tqdm(enumerate(valloader), total=len(valloader), leave=False)
-	for i, (batch_img, batch_lbl) in pbar2:
-		# times.append(t_diff)
-		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
-		# if i==0:
-		#   writer.add_graph(segclip, (batch_img, text_tokens))
-		output = segclip(batch_img, text_tokens)
-		# print(output.min(), output.max())
-		loss = loss_fn(output, batch_lbl)
-		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
-		inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
-		batch_miou = (inter.sum()/union.sum()).item()
-		# tqdm.write(str(i)+str(u))
-		epoch_miou_v += batch_miou
-		# tqdm.write(str(batch_miou))
-		# tqdm.write(str((i/u).mean()))		
-		pbar2.set_description_str(f'val loss: {loss.item():.4f}, iou: {batch_miou:.4f}')
-		epoch_loss_v += loss.item()
-		if i==0 and epoch%5==4:
-			pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
-			lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_lbl]).to(device)
-			writer.add_images('img vs pred vs GT', torch.cat([norm_im(batch_img), norm_im(pred), norm_im(lbl)], dim=2), epoch)
-			writer.add_images('img + GT', (norm_im(batch_img)*255).int() | lbl.int(), epoch)
-			writer.add_images('img + pred', (norm_im(batch_img)*255).int() | pred.int(), epoch)
-			# writer.add_images('img', norm_im(batch_img), epoch)
-			# writer.add_images('GT', lbl, epoch)
-			# writer.add_images('pred', pred, epoch)
-	epoch_loss_v /= len(valloader)
-	epoch_miou_v /= len(valloader)
-	tqdm.write(f'(train/val) Epoch {epoch} loss: {epoch_loss_t:.4f}/{epoch_loss_v:.4f}, mean mIOU: {epoch_miou_t:.4f}/{epoch_miou_v:.4f}')
-	
-	writer.add_scalar('loss/train', epoch_loss_t, epoch)
-	writer.add_scalar('loss/val', epoch_loss_v, epoch)
+			segclip.eval()
+			epoch_miou_v = 0
+			epoch_loss_v = 0
+			pbar2 = tqdm(enumerate(valloader), total=len(valloader), leave=False)
+			for i, (batch_img, batch_lbl) in pbar2:
+				# times.append(t_diff)
+				batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
+				# if i==0:
+				#   writer.add_graph(segclip, (batch_img, text_tokens))
+				output = segclip(batch_img, text_tokens)
+				# print(output.min(), output.max())
+				loss = loss_fn(output, batch_lbl)
+				batch_pred = F.softmax(output, dim=1).argmax(dim=1)
+				inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
+				batch_miou = (inter.sum()/union.sum()).item()
+				# tqdm.write(str(i)+str(u))
+				epoch_miou_v += batch_miou
+				# tqdm.write(str(batch_miou))
+				# tqdm.write(str((i/u).mean()))		
+				pbar2.set_description_str(f'val loss: {loss.item():.4f}, iou: {batch_miou:.4f}')
+				epoch_loss_v += loss.item()
+				if i==0 and epoch%5==4:
+					pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
+					lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_lbl]).to(device)
+					writer.add_images('img vs pred vs GT', torch.cat([norm_im(batch_img), norm_im(pred), norm_im(lbl)], dim=2), epoch)
+					writer.add_images('img + GT', (norm_im(batch_img)*255).int() | lbl.int(), epoch)
+					writer.add_images('img + pred', (norm_im(batch_img)*255).int() | pred.int(), epoch)
+					# writer.add_images('img', norm_im(batch_img), epoch)
+					# writer.add_images('GT', lbl, epoch)
+					# writer.add_images('pred', pred, epoch)
+			epoch_loss_v /= len(valloader)
+			epoch_miou_v /= len(valloader)
+			tqdm.write(f'(train/val) Epoch {epoch} loss: {epoch_loss_t:.4f}/{epoch_loss_v:.4f}, mean mIOU: {epoch_miou_t:.4f}/{epoch_miou_v:.4f}')
+			
+			writer.add_scalar('loss/train', epoch_loss_t, epoch)
+			writer.add_scalar('loss/val', epoch_loss_v, epoch)
 
-	writer.add_scalar('miou/train', epoch_miou_t, epoch)
-	writer.add_scalar('miou/val', epoch_miou_v, epoch)
-	
-	final_miou_t += epoch_miou_t
-	final_miou_v += epoch_miou_v
-	final_loss = epoch_loss_v
+			writer.add_scalar('miou/train', epoch_miou_t, epoch)
+			writer.add_scalar('miou/val', epoch_miou_v, epoch)
+			
+			final_miou_t += epoch_miou_t
+			final_miou_v += epoch_miou_v
+			final_loss = epoch_loss_v
+			if i>10:
+				break
+f = open('profile.txt','w')
+f.write(prof.key_averages().table(sort_by="cpu_time_total"))
 end = time.time()
 t_diff = end - start
 final_miou_t /= config['num_epochs']
@@ -178,8 +182,6 @@ final_miou_v /= config['num_epochs']
 # writer.add_scalar(f'Epoch time', t_diff, epoch)
 print('End')
 print()
-# f = open('profile.txt','w')
-# f.write(prof.key_averages().table(sort_by="cpu_time_total"))
 writer.add_hparams(config, {'mean train mIOU':final_miou_t, 'mean val mIOU':final_miou_v, 'final loss': final_loss, 'total time': t_diff}, run_name='.')
 
 writer.close()
