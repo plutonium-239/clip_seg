@@ -16,7 +16,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 import matplotlib.pyplot as plt
 from models.model import intersectionAndUnionGPU
 
-previous_runs = os.listdir('runs')
+previous_runs = os.listdir('fewshotruns')
 if len(previous_runs) == 0:
 	run_number = 1
 else:
@@ -24,7 +24,7 @@ else:
 
 logdir = 'run_%02d' % run_number
 
-writer = SummaryWriter('runs/'+logdir)
+writer = SummaryWriter('fewshotruns/'+logdir)
 layout = {
 	"Loss and mIOU for train and val": {
 		"loss": ["Multiline", ["loss/train", "loss/val"]],
@@ -84,7 +84,14 @@ pascal_labels = [
 template = 'a photo of a '
 pascal_labels = [template+x for x in pascal_labels]
 pascal_labels.insert(0, '')
-text_tokens = clip.tokenize(pascal_labels).to(device)
+pascal_labels_train = [pascal_labels[x] for x in dataset.label_set]
+pascal_labels_val = [pascal_labels[x] for x in valset.label_set]
+pascal_labels_train.insert(0, '')
+pascal_labels_val.insert(0, '')
+text_tokens_train = clip.tokenize(pascal_labels_train).to(device)
+text_tokens_val = clip.tokenize(pascal_labels_val).to(device)
+print(text_tokens_train.shape)
+print(text_tokens_val.shape)
 final_loss = 0
 final_miou_t = 0
 final_miou_v = 0
@@ -103,7 +110,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:
 		#   writer.add_graph(segclip, (batch_img, text_tokens))
-		output = segclip(batch_img, text_tokens)
+		output = segclip(batch_img, text_tokens_train)
 		# print(output.min(), output.max())
 		loss = loss_fn(output, batch_lbl)
 		loss.backward()
@@ -137,7 +144,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:
 		#   writer.add_graph(segclip, (batch_img, text_tokens))
-		output = segclip(batch_img, text_tokens)
+		output = segclip(batch_img, text_tokens_val)
 		# print(output.min(), output.max())
 		loss = loss_fn(output, batch_lbl)
 		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
@@ -183,5 +190,5 @@ print()
 writer.add_hparams(config, {'mean train mIOU':final_miou_t, 'mean val mIOU':final_miou_v, 'final loss': final_loss, 'total time': t_diff}, run_name='.')
 
 writer.close()
-torch.save(segclip.state_dict(), f'runs/{logdir}/model.pt')
+torch.save(segclip.state_dict(), f'fewshotruns/{logdir}/model.pt')
 # subprocess.run(['tensorboard', 'dev', 'upload', '--logdir', 'runs/'])
