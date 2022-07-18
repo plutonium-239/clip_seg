@@ -87,6 +87,7 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 			self.label_set = self.train_label_set
 		else:
 			self.label_set = self.val_label_set
+		# self.label_offset = [0] + self.label_set 
 		self.n_classes = 21
 
 		assert len(self.images) == len(self.targets)
@@ -164,6 +165,7 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 
 		# Annotation in VOC contains 255
 		target_np[target_np > 20] = 0
+
 		return target_np
 
 	def set_bg_pixel(self, target_np):

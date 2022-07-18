@@ -38,6 +38,7 @@ def norm_im(im):
 	ims = (im - x_min) / (x_max-x_min)
 	return ims
 
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
@@ -116,6 +117,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		loss.backward()
 		optimiser.step()
 		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
+		# batch_pred[batch_pred > config['fold']*5] += 5
 		inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
 		batch_miou = (inter.sum()/union.sum()).item()
 		# tqdm.write(str(i)+str(u))
@@ -148,6 +150,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 		# print(output.min(), output.max())
 		loss = loss_fn(output, batch_lbl)
 		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
+		# batch_pred[batch_pred > 0] += config['fold']*5
 		inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
 		batch_miou = (inter.sum()/union.sum()).item()
 		# tqdm.write(str(i)+str(u))
@@ -160,8 +163,8 @@ for epoch in tqdm(range(config['num_epochs'])):
 			pred = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_pred]).to(device)
 			lbl = torch.stack([dataset.decode_segmap(x).permute(2,0,1) for x in batch_lbl]).to(device)
 			writer.add_images('img vs pred vs GT', torch.cat([norm_im(batch_img), norm_im(pred), norm_im(lbl)], dim=2), epoch)
-			writer.add_images('img + GT', (norm_im(batch_img)*255).int() | lbl.int(), epoch)
-			writer.add_images('img + pred', (norm_im(batch_img)*255).int() | pred.int(), epoch)
+			# writer.add_images('img + GT', (norm_im(batch_img)*255).int() | lbl.int(), epoch)
+			# writer.add_images('img + pred', (norm_im(batch_img)*255).int() | pred.int(), epoch)
 			# writer.add_images('img', norm_im(batch_img), epoch)
 			# writer.add_images('GT', lbl, epoch)
 			# writer.add_images('pred', pred, epoch)
