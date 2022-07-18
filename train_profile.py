@@ -152,7 +152,7 @@ with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
 			# 	writer.add_images('img', norm_im(batch_img), epoch)
 			# 	writer.add_images('GT', lbl, epoch)
 			# 	writer.add_images('pred', pred, epoch)
-			if i==9:
+			if i==199:
 				break
 		epoch_loss_t /= len(trainloader)
 		epoch_miou_t /= len(trainloader)
