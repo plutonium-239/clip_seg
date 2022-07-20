@@ -76,7 +76,7 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 			self.images = [os.path.join(
 				voc_base, 'JPEGImages', i + '.jpg') for i in voc_val_list]
 			self.targets = [os.path.join(
-				voc_base, "SegmentationClass", i + '.png') for i in voc_val_list]
+				voc_base, "SegmentationClass", 'pre_encoded', i + '.png') for i in voc_val_list]
 
 		# Split dataset based on folding. Refer to https://arxiv.org/pdf/1709.03410.pdf
 		# Given fold number, define L_{test}
@@ -105,9 +105,9 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 		# Given an index of an image, this dict returns list of classes in the image
 		self.img_class_map = {}
 
-		if os.path.exists(f"dataset_{fold}.pt"):
+		if os.path.exists(f"dataset_{fold}_{train}.pt"):
 			print('Using Saved Dataset')
-			d = torch.load(f"dataset_{fold}.pt")
+			d = torch.load(f"dataset_{fold}_{train}.pt")
 			self.img_class_map = d['icm']
 			self.class_img_map = d['cim']
 			folded_images = d['fi']
@@ -136,7 +136,7 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 				'cim':self.class_img_map,
 				'fi': folded_images,
 				'ft': folded_targets,
-				}, f"dataset_{fold}.pt")
+				}, f"dataset_{fold}_{train}.pt")
 
 		self.images = folded_images
 		self.targets = folded_targets
