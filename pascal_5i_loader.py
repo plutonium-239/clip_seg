@@ -183,13 +183,13 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 			max_val_label = max(self.val_label_set)
 			target_np[target_np >
 					  max_val_label] = target_np[target_np > max_val_label] - 5
-		else:
-			label_mask_idx_map = []
-			for x in self.val_label_set:
-				label_mask_idx_map.append(target_np == x)
-			target_np = np.zeros_like(target_np)
-			for i in range(len(label_mask_idx_map)):
-				target_np[label_mask_idx_map[i]] = i + 1
+		# else:
+		# 	label_mask_idx_map = []
+		# 	for x in self.val_label_set:
+		# 		label_mask_idx_map.append(target_np == x)
+		# 	target_np = np.zeros_like(target_np)
+		# 	for i in range(len(label_mask_idx_map)):
+		# 		target_np[label_mask_idx_map[i]] = i + 1
 		return target_np
 
 	def get_img_containing_class(self, class_id):
