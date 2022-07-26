@@ -86,18 +86,18 @@ class SegCLIP(nn.Module):
 		with torch.no_grad():
 			text = self.clip.encode_text(text)
 	
-		image = stem(image)
-		# [1, 64, 56, 56]
-		res = self.clip.visual.layer1(image)
-		# res = image.clone()
-		# [1, 256, 56, 56]
-		res2 = self.clip.visual.layer2(res)
-		# res2 = image.clone()
-		# [1, 512, 28, 28]
-		image = self.clip.visual.layer3(res2)
-		# [1, 1024, 14, 14]
-		image = self.clip.visual.layer4(image)
-		# [1, 2048, 7, 7]
+			image = stem(image)
+			# [1, 64, 56, 56]
+			res = self.clip.visual.layer1(image)
+			# res = image.clone()
+			# [1, 256, 56, 56]
+			res2 = self.clip.visual.layer2(res)
+			# res2 = image.clone()
+			# [1, 512, 28, 28]
+			image = self.clip.visual.layer3(res2)
+			# [1, 1024, 14, 14]
+			image = self.clip.visual.layer4(image)
+			# [1, 2048, 7, 7]
 
 		# removing attnpool
 		# image = self.clip_encoder.visual.attnpool(image)
