@@ -11,6 +11,7 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import time
 import os,sys
+import json
 import subprocess # for uploading tensorboard
 from torch.profiler import profile, record_function, ProfilerActivity
 import matplotlib.pyplot as plt
@@ -23,6 +24,7 @@ else:
 	run_number = max([int(s.split('run_')[1]) for s in previous_runs]) + 1
 
 logdir = 'run_%02d' % run_number
+
 
 writer = SummaryWriter('fewshotruns/'+logdir)
 layout = {
@@ -47,6 +49,9 @@ segclip.to(device) # redundant
 
 if len(sys.argv)>1:
 	config['fold'] = int(sys.argv[1])
+
+runs = json.load(open('fewshotruns.json'))
+runs[run_number] = config['fold']
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
 dataset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=preproc, preproc_lbl=preproc_lbl)
@@ -184,6 +189,8 @@ for epoch in tqdm(range(config['num_epochs'])):
 	final_loss = epoch_loss_v
 # f = open('profile.txt','w')
 # f.write(prof.key_averages().table(sort_by="cpu_time_total"))
+json.dump(runs, open('fewshotruns.json','w'))
+
 end = time.time()
 t_diff = end - start
 final_miou_t /= config['num_epochs']
