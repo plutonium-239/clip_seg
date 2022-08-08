@@ -1,4 +1,4 @@
-import model
+from models import model_orig
 import clip
 import torch
 import torch.nn.functional as F
@@ -30,7 +30,7 @@ def norm_im(im):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
-segclip, preproc, preproc_lbl = model.load_custom_clip('RN50', num_classes=5, device=device)
+segclip, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', num_classes=5, device=device)
 segclip.load_state_dict(torch.load(f"fewshotruns/run_{config['runid']}/model.pt"))
 segclip.to(device) # redundant
 
