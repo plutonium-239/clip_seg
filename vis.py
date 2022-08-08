@@ -31,12 +31,12 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
 segclip, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=224)
-segclip.load_state_dict(torch.load(f"fewshotruns/run_{config['runid']}/model.pt"))
+segclip.load_state_dict(torch.load(f"fewshotruns/run_{config['runid']}/model.pt", map_location=device))
 segclip.to(device) # redundant
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
 # trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
-config['fold'] = json.load(open('fewshotruns.json'))[config['runid']]
+config['fold'] = json.load(open('fewshotruns.json'))[f"{config['runid']}"]
 
 dataset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=preproc, preproc_lbl=preproc_lbl)
 trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
