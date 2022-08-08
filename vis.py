@@ -83,7 +83,7 @@ print(text_tokens_val.shape)
 	# with record_function("model_inference"):
 segclip.eval()
 
-for i,(img,lbl) in enumerate(trainloader): 
+for i,(img,lbl) in tqdm(enumerate(trainloader)): 
 	if i == 20:
 		break
 	img, lbl = img.to(device), lbl.to(device)
@@ -96,7 +96,7 @@ for i,(img,lbl) in enumerate(trainloader):
 	writer.add_images('TRAIN img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
 
 
-for i,(img,lbl) in enumerate(valloader): 
+for i,(img,lbl) in tqdm(enumerate(valloader)): 
 	if i == 20:
 		break
 	img, lbl = img.to(device), lbl.to(device)
