@@ -83,25 +83,29 @@ print(text_tokens_val.shape)
 	# with record_function("model_inference"):
 segclip.eval()
 
-img, lbl = next(iter(trainloader))
-img, lbl = img.to(device), lbl.to(device)
+for i,(img,lbl) in enumerate(trainloader): 
+	if i == 20:
+		break
+	img, lbl = img.to(device), lbl.to(device)
 
-pred = segclip(img, text_tokens_train)
-pred = F.softmax(pred, dim=1).argmax(dim=1)
-pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
-lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
+	pred = segclip(img, text_tokens_train)
+	pred = F.softmax(pred, dim=1).argmax(dim=1)
+	pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
+	lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
 
-writer.add_images('TRAIN img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2))
+	writer.add_images('TRAIN img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
 
 
-img, lbl = next(iter(valloader))
-img, lbl = img.to(device), lbl.to(device)
+for i,(img,lbl) in enumerate(valloader): 
+	if i == 20:
+		break
+	img, lbl = img.to(device), lbl.to(device)
 
-pred = segclip(img, text_tokens_val)
-pred = F.softmax(pred, dim=1).argmax(dim=1)
-pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
-lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
+	pred = segclip(img, text_tokens_val)
+	pred = F.softmax(pred, dim=1).argmax(dim=1)
+	pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
+	lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
 
-writer.add_images('VAL img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2))
+	writer.add_images('VAL img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
 
 writer.close()
