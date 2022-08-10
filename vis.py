@@ -143,6 +143,7 @@ for i,(img,lbl) in tqdm(enumerate(valloader), total=len(trainloader)):
 
 		writer.add_images('VAL img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
 
+	lbl, pred = lbl.long(), pred.long().to(device)
 	for label in torch.unique(lbl):
 		pred_classes, counts = torch.unique(pred[lbl==label], return_counts=True)
 		for j in range(len(pred_classes)):
