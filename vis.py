@@ -84,7 +84,7 @@ print(text_tokens_val.shape)
 	# with record_function("model_inference"):
 segclip.eval()
 
-confusion_matrix = torch.zeros(21,21)
+confusion_matrix = torch.zeros(21,21, device=device)
 val_confusion_matrix = torch.zeros(21,21)
 
 for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)): 
