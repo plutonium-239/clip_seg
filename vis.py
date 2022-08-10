@@ -129,7 +129,7 @@ for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)):
 			confusion_matrix[label][pred_classes[j]] += counts[j]
 
 torch.save(confusion_matrix, 'fsimages/'+logdir+'/conf.pt')
-writer.add_figure('conf', heatmap(confusion_matrix, pascal_labels, pascal_labels))
+writer.add_figure('conf', heatmap(confusion_matrix.cpu(), pascal_labels, pascal_labels))
 
 for i,(img,lbl) in tqdm(enumerate(valloader), total=len(trainloader)): 
 	img, lbl = img.to(device), lbl.to(device)
@@ -149,6 +149,6 @@ for i,(img,lbl) in tqdm(enumerate(valloader), total=len(trainloader)):
 			val_confusion_matrix[label][pred_classes[j]] += counts[j]
 
 torch.save(val_confusion_matrix, 'fsimages/'+logdir+'/val_conf.pt')
-writer.add_figure('val_conf', heatmap(val_confusion_matrix, pascal_labels, pascal_labels))
+writer.add_figure('val_conf', heatmap(val_confusion_matrix.cpu(), pascal_labels, pascal_labels))
 
 writer.close()
