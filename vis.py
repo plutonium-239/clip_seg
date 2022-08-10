@@ -68,7 +68,7 @@ trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=Tr
 valset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=preproc, preproc_lbl=preproc_lbl, train=False)
 valloader = DataLoader(valset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
 
-pascal_labels = [
+pascal_classes = [
 	'aeroplane',
 	'bicycle',
 	'bird',
@@ -92,7 +92,7 @@ pascal_labels = [
 ]
 
 template = 'a photo of a '
-pascal_labels = [template+x for x in pascal_labels]
+pascal_labels = [template+x for x in pascal_classes]
 pascal_labels.insert(0, '')
 pascal_labels_train = [pascal_labels[x] for x in dataset.label_set]
 # pascal_labels_val = [pascal_labels[x] for x in valset.label_set]
@@ -129,9 +129,9 @@ for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)):
 			confusion_matrix[label][pred_classes[j]] += counts[j]
 
 torch.save(confusion_matrix, 'fsimages/'+logdir+'/conf.pt')
-writer.add_figure('conf', heatmap(confusion_matrix.cpu(), pascal_labels, pascal_labels))
+writer.add_figure('conf', heatmap(confusion_matrix.cpu()[1:,1:], pascal_classes, pascal_classes))
 
-for i,(img,lbl) in tqdm(enumerate(valloader), total=len(trainloader)): 
+for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)): 
 	img, lbl = img.to(device), lbl.to(device)
 
 	pred = segclip(img, text_tokens_val)
@@ -150,6 +150,6 @@ for i,(img,lbl) in tqdm(enumerate(valloader), total=len(trainloader)):
 			val_confusion_matrix[label][pred_classes[j]] += counts[j]
 
 torch.save(val_confusion_matrix, 'fsimages/'+logdir+'/val_conf.pt')
-writer.add_figure('val_conf', heatmap(val_confusion_matrix.cpu(), pascal_labels, pascal_labels))
+writer.add_figure('val_conf', heatmap(val_confusion_matrix.cpu()[1:,1:], pascal_classes, pascal_classes))
 
 writer.close()
