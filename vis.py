@@ -87,7 +87,7 @@ segclip.eval()
 confusion_matrix = torch.zeros(21,21)
 val_confusion_matrix = torch.zeros(21,21)
 
-for i,(img,lbl) in tqdm(enumerate(trainloader)): 
+for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)): 
 	img, lbl = img.to(device), lbl.to(device)
 
 	pred = segclip(img, text_tokens_train)
@@ -106,7 +106,7 @@ for i,(img,lbl) in tqdm(enumerate(trainloader)):
 
 
 
-for i,(img,lbl) in tqdm(enumerate(valloader)): 
+for i,(img,lbl) in tqdm(enumerate(valloader), total=len(trainloader)): 
 	img, lbl = img.to(device), lbl.to(device)
 
 	pred = segclip(img, text_tokens_val)
