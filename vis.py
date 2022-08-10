@@ -1,4 +1,5 @@
 from models import model_orig
+from models.model import intersectionAndUnionGPU
 import clip
 import torch
 import torch.nn.functional as F
@@ -83,29 +84,44 @@ print(text_tokens_val.shape)
 	# with record_function("model_inference"):
 segclip.eval()
 
+confusion_matrix = torch.zeros(21,21)
+val_confusion_matrix = torch.zeros(21,21)
+
 for i,(img,lbl) in tqdm(enumerate(trainloader)): 
-	if i == 20:
-		break
 	img, lbl = img.to(device), lbl.to(device)
 
 	pred = segclip(img, text_tokens_train)
 	pred = F.softmax(pred, dim=1).argmax(dim=1)
-	pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
-	lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
 
-	writer.add_images('TRAIN img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
+	if i < 20:
+		pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
+		lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
+
+		writer.add_images('TRAIN img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
+
+	for label in torch.unique(lbl):
+		pred_classes, counts = torch.unique(pred[lbl==label], return_counts=True)
+		for j in range(len(pred_classes)):
+			confusion_matrix[label][pred_classes[j]] += counts[j]
+
 
 
 for i,(img,lbl) in tqdm(enumerate(valloader)): 
-	if i == 20:
-		break
 	img, lbl = img.to(device), lbl.to(device)
 
 	pred = segclip(img, text_tokens_val)
 	pred = F.softmax(pred, dim=1).argmax(dim=1)
-	pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
-	lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
+	
+	if i == 20:
+		pred = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in pred]).to(device)
+		lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
 
-	writer.add_images('VAL img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
+		writer.add_images('VAL img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
+
+	for label in torch.unique(lbl):
+		pred_classes, counts = torch.unique(pred[lbl==label], return_counts=True)
+		for j in range(len(pred_classes)):
+			val_confusion_matrix[label][pred_classes[j]] += counts[j]
+
 
 writer.close()
