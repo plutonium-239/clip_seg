@@ -98,7 +98,8 @@ for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)):
 		lbl = torch.stack([valset.decode_segmap(x).permute(2,0,1) for x in lbl]).to(device)
 
 		writer.add_images('TRAIN img vs pred vs GT', torch.cat([norm_im(img), norm_im(pred), norm_im(lbl)], dim=2), global_step=i)
-
+		
+	lbl, pred = lbl.long(), pred.long()
 	for label in torch.unique(lbl):
 		pred_classes, counts = torch.unique(pred[lbl==label], return_counts=True)
 		for j in range(len(pred_classes)):
