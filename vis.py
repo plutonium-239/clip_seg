@@ -45,6 +45,7 @@ def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **k
 	# Turn spines off and create white grid.
 	# plt.spines[:].set_visible(False)
 	plt.box(False)
+	plt.setp(plt.xticks()[1], rotation=-90, ha="right", rotation_mode="anchor")
 	# plt.xticks(np.arange(data.shape[1]+1)-.5, minor=True)
 	# plt.yticks(np.arange(data.shape[0]+1)-.5, minor=True)
 	plt.grid(which="minor", color="w", linestyle='-', linewidth=3)
@@ -107,8 +108,11 @@ print(text_tokens_val.shape)
 	# with record_function("model_inference"):
 segclip.eval()
 
+# approx ones only do +1 instead of +(num_of_pixels) for a pair of (gt, pred) labels
 confusion_matrix = torch.zeros(21,21, device=device)
+confusion_matrix_approx = torch.zeros(21,21, device=device)
 val_confusion_matrix = torch.zeros(21,21, device=device)
+val_confusion_matrix_approx = torch.zeros(21,21, device=device)
 
 for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)): 
 	img, lbl = img.to(device), lbl.to(device)
@@ -127,9 +131,12 @@ for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)):
 		pred_classes, counts = torch.unique(pred[lbl==label], return_counts=True)
 		for j in range(len(pred_classes)):
 			confusion_matrix[label][pred_classes[j]] += counts[j]
+			confusion_matrix_approx[label][pred_classes[j]] += 1
 
 torch.save(confusion_matrix, 'fsimages/'+logdir+'/conf.pt')
 writer.add_figure('conf', heatmap(confusion_matrix.cpu()[1:,1:], pascal_classes, pascal_classes))
+torch.save(confusion_matrix_approx, 'fsimages/'+logdir+'/conf_approx.pt')
+writer.add_figure('conf_approx', heatmap(confusion_matrix_approx.cpu()[1:,1:], pascal_classes, pascal_classes))
 
 for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)): 
 	img, lbl = img.to(device), lbl.to(device)
@@ -148,8 +155,11 @@ for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)):
 		pred_classes, counts = torch.unique(pred[lbl==label], return_counts=True)
 		for j in range(len(pred_classes)):
 			val_confusion_matrix[label][pred_classes[j]] += counts[j]
+			val_confusion_matrix_approx[label][pred_classes[j]] += 1
 
 torch.save(val_confusion_matrix, 'fsimages/'+logdir+'/val_conf.pt')
 writer.add_figure('val_conf', heatmap(val_confusion_matrix.cpu()[1:,1:], pascal_classes, pascal_classes))
+torch.save(val_confusion_matrix_approx, 'fsimages/'+logdir+'/val_conf_approx.pt')
+writer.add_figure('val_conf_approx', heatmap(val_confusion_matrix_approx.cpu()[1:,1:], pascal_classes, pascal_classes))
 
 writer.close()
