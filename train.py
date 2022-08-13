@@ -44,11 +44,16 @@ def norm_im(im):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
-segclip, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=224)
-segclip.to(device) # redundant
-
+img_size=224
 if len(sys.argv)>1:
 	config['fold'] = int(sys.argv[1])
+if len(sys.argv)>2:
+	img_size = int(sys.argv[2])
+
+segclip, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=img_size)
+segclip.to(device) # redundant
+
+
 
 runs = json.load(open('fewshotruns.json'))
 runs[run_number] = config['fold']
