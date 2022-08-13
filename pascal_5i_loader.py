@@ -105,9 +105,9 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 		# Given an index of an image, this dict returns list of classes in the image
 		self.img_class_map = {}
 
-		if os.path.exists(f"dataset_{fold}_{train}.pt"):
+		if os.path.exists(f"datasets/dataset_{fold}_{train}.pt"):
 			print('Using Saved Dataset')
-			d = torch.load(f"dataset_{fold}_{train}.pt")
+			d = torch.load(f"datasets/dataset_{fold}_{train}.pt")
 			self.img_class_map = d['icm']
 			self.class_img_map = d['cim']
 			folded_images = d['fi']
@@ -136,7 +136,7 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 				'cim':self.class_img_map,
 				'fi': folded_images,
 				'ft': folded_targets,
-				}, f"dataset_{fold}_{train}.pt")
+				}, f"datasets/dataset_{fold}_{train}.pt")
 
 		self.images = folded_images
 		self.targets = folded_targets
