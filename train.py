@@ -57,6 +57,7 @@ segclip.to(device) # redundant
 
 runs = json.load(open('fewshotruns.json'))
 runs[run_number] = config['fold']
+json.dump(runs, open('fewshotruns.json','w'))
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
 dataset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=preproc, preproc_lbl=preproc_lbl)
@@ -194,7 +195,6 @@ for epoch in tqdm(range(config['num_epochs'])):
 	final_loss = epoch_loss_v
 # f = open('profile.txt','w')
 # f.write(prof.key_averages().table(sort_by="cpu_time_total"))
-json.dump(runs, open('fewshotruns.json','w'))
 
 end = time.time()
 t_diff = end - start
