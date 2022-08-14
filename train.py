@@ -49,14 +49,13 @@ if len(sys.argv)>1:
 	config['fold'] = int(sys.argv[1])
 if len(sys.argv)>2:
 	img_size = int(sys.argv[2])
+config['img_size'] = img_size
 
 segclip, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=img_size)
 segclip.to(device) # redundant
 
-
-
 runs = json.load(open('fewshotruns.json'))
-runs[run_number] = config['fold']
+runs[run_number] = {'fold': config['fold'], 'img_size': img_size}
 json.dump(runs, open('fewshotruns.json','w'), indent=4)
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
