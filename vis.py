@@ -23,11 +23,11 @@ config['runid'] = int(sys.argv[1])
 
 logdir = f"run_{config['runid']}"
 
-writer = SummaryWriter('fsimages/'+logdir)
-
 run = json.load(open('fewshotruns.json'))[f"{config['runid']}"]
 config['fold'] = run['fold']
 config['img_size'] = run['img_size']
+
+writer = SummaryWriter('fsimages/'+logdir)
 
 def norm_im(im):
 	x_min, x_max = im.min(), im.max()

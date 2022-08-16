@@ -63,6 +63,9 @@ logdir = f"run_{args.runid}"
 if args.log:
 	writer = SummaryWriter('fsimages/'+logdir)
 
+run = json.load(open('fewshotruns.json'))[f"{args.runid}"]
+fold = run['fold']
+
 conf = torch.load('fsimages/'+logdir+'/conf.pt', map_location='cpu')
 conf_approx = torch.load('fsimages/'+logdir+'/conf_approx.pt', map_location='cpu')[1:, 1:]
 val_conf = torch.load('fsimages/'+logdir+'/val_conf.pt', map_location='cpu')
