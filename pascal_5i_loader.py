@@ -20,7 +20,7 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 		- train: a bool flag to indicate whether L_{train} or L_{test} should be used
 	"""
 
-	def __init__(self, root, fold, preproc, preproc_lbl, train=True):
+	def __init__(self, root, fold, preproc, preproc_lbl=None, train=True):
 		super(Pascal5iLoader, self).__init__(root, None, None, None)
 		assert fold >= 0 and fold <= 3
 		self.train = train
@@ -217,11 +217,15 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 	def __getitem__(self, idx):
 		# For both SBD and VOC2012, images are stored as .jpg
 		img = cv2.cvtColor(cv2.imread(self.images[idx]), cv2.COLOR_BGR2RGB)
-		img = self.preproc(img)
-
 		target_np = self.load_seg_mask(self.targets[idx])
 		target_np = self.set_bg_pixel(target_np)
-		target_np = self.preproc_lbl(target_np).long()
+		
+		if self.preproc_lbl is not None:
+			img = self.preproc(img)
+			target_np = self.preproc_lbl(target_np).long()
+		else:
+			img, target_np = self.preproc(img, target_np)
+			target_np = target_np.long()
 
 		return img, target_np
 

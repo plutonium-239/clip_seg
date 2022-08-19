@@ -1,4 +1,3 @@
-from models import model_orig
 import clip
 import torch
 import torch.nn as nn
@@ -49,11 +48,20 @@ if len(sys.argv)>1:
 	config['fold'] = int(sys.argv[1])
 if len(sys.argv)>2:
 	img_size = int(sys.argv[2])
+if len(sys.argv)>3:
+	config['model_name'] = sys.argv[3]
 config['img_size'] = img_size
 
-segclip, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=img_size)
-segclip.to(device) # redundant
-
+if config['model_name'] == 'CLIP':
+	from models import model_orig
+	model, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=img_size)
+elif config['model_name'] == 'PSPNet':
+	from models import model_pspnet
+	model, preproc = model_pspnet.load_segclip_psp(_toremove_, zoom=config['zoom'], img_size=img_size)
+	preproc_lbl = None
+model.to(device) # redundant
+	
+	
 runs = json.load(open('fewshotruns.json'))
 runs[run_number] = {'fold': config['fold'], 'img_size': img_size}
 json.dump(runs, open('fewshotruns.json','w'), indent=4)
@@ -67,7 +75,7 @@ valset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=prep
 valloader = DataLoader(valset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
 
 loss_fn = nn.CrossEntropyLoss()
-optimiser = torch.optim.Adam(segclip.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
+optimiser = torch.optim.Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
 
 pascal_labels = [
 	'aeroplane',
@@ -116,15 +124,21 @@ for epoch in tqdm(range(config['num_epochs'])):
 	epoch_loss_t = 0
 	epoch_miou_t = 0
 	pbar = tqdm(enumerate(trainloader), total=len(trainloader), leave=False)
-	segclip.train()
+	model.train()
 	for i, (batch_img, batch_lbl) in pbar:
 		# times.append(t_diff)
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:
-		#   writer.add_graph(segclip, (batch_img, text_tokens))
-		output = segclip(batch_img, text_tokens_train)
-		# print(output.min(), output.max())
-		loss = loss_fn(output, batch_lbl)
+		#   writer.add_graph(model, (batch_img, text_tokens))
+		if config['model_name'] == 'CLIP':
+			output = model(batch_img, text_tokens_train)
+			# print(output.min(), output.max())
+			loss = loss_fn(output, batch_lbl)
+		elif config['model_name']=='PSPNet':
+			output, main_loss, aux_loss = model(batch_img, text_tokens_train, label=batch_lbl)
+			loss = main_loss + config['aux_weight']*aux_loss
+
+		optimiser.zero_grad()
 		loss.backward()
 		optimiser.step()
 		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
@@ -148,7 +162,7 @@ for epoch in tqdm(range(config['num_epochs'])):
 	epoch_loss_t /= len(trainloader)
 	epoch_miou_t /= len(trainloader)
 
-	segclip.eval()
+	model.eval()
 	epoch_miou_v = 0
 	epoch_loss_v = 0
 	pbar2 = tqdm(enumerate(valloader), total=len(valloader), leave=False)
@@ -156,10 +170,9 @@ for epoch in tqdm(range(config['num_epochs'])):
 		# times.append(t_diff)
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:
-		#   writer.add_graph(segclip, (batch_img, text_tokens))
-		output = segclip(batch_img, text_tokens_val)
+		#   writer.add_graph(model, (batch_img, text_tokens))
+		output = model(batch_img, text_tokens_val)
 		# print(output.min(), output.max())
-		loss = loss_fn(output, batch_lbl)
 		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
 		# batch_pred[batch_pred > 0] += config['fold']*5
 		inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])
@@ -205,5 +218,5 @@ print()
 writer.add_hparams(config, {'mean train mIOU':final_miou_t, 'mean val mIOU':final_miou_v, 'final loss': final_loss, 'total time': t_diff}, run_name='.')
 
 writer.close()
-torch.save(segclip.state_dict(), f'fewshotruns/{logdir}/model.pt')
+torch.save(model.state_dict(), f'fewshotruns/{logdir}/model.pt')
 # subprocess.run(['tensorboard', 'dev', 'upload', '--logdir', 'runs/'])
