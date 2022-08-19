@@ -32,12 +32,20 @@ def load_segclip_psp(num_classes, zoom=8, img_size=320):
 	std = [0.229, 0.224, 0.225]
 	std = [item * value_scale for item in std]
 	train_transform = transform.Compose([
-		tf.
-		transform.RandScale([0.5, 2.0]),
-		transform.RandRotate([-10, 10], padding=mean, ignore_label=255),
-		transform.RandomGaussianBlur(),
-		transform.RandomHorizontalFlip(),
-		transform.Crop([img_size, img_size], crop_type='rand', padding=mean, ignore_label=255),
-		transform.ToTensor(),
-		transform.Normalize(mean=mean, std=std)])
+		tf.ToTensor(),
+		tf.RandomAffine(scale=(0.5, 2), interpolation=tf.InterpolationMode.BILINEAR),
+		tf.RandomRotation(degrees=[-10, 10], interpolation=tf.InterpolationMode.BILINEAR, fill=mean),
+		tf.Lambda(lambda x: tf.GaussianBlur(5, 0)(x) if random.random()<0.5 else x),
+		tf.RandomHorizontalFlip(),
+		tf.RandomCrop(img_size, fill=padding, pad_if_needed=True),
+		tf.Normalize(mean=mean, std=std)
+	])
+	train_transform_label = transform.Compose([
+		tf.ToTensor(),
+		tf.RandomAffine(scale=(0.5, 2), interpolation=tf.InterpolationMode.NEAREST),
+		tf.RandomRotation(degrees=[-10, 10], interpolation=tf.InterpolationMode.NEAREST, fill=mean),
+		tf.RandomHorizontalFlip(),
+		tf.RandomCrop(img_size, fill=padding, pad_if_needed=True),
+		tf.Normalize(mean=mean, std=std)
+	])
 	return model, 
