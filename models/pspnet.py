@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-import model.resnet as models
+import models.resnet as models
 
 
 class PPM(nn.Module):

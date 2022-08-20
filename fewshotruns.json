@@ -1,27 +1,33 @@
 {
     "20": 0,
     "21": 1,
-    "22": 2,
-    "23": 3,
+    "22": {
+        "fold": 0,
+        "img_size": 320
+    },
+    "23": {
+        "fold": 0,
+        "img_size": 320
+    },
     "24": 0,
     "25": {
         "fold": 0,
         "img_size": 224
     },
     "26": {
-        "fold": 1,
-        "img_size": 224
+        "fold": 0,
+        "img_size": 320
     },
     "27": {
         "fold": 0,
-        "img_size": 224
+        "img_size": 320
     },
     "30": {
         "fold": 0,
         "img_size": 320
     },
     "31": {
-        "fold": 1,
+        "fold": 0,
         "img_size": 320
     },
     "32": {
@@ -29,7 +35,27 @@
         "img_size": 320
     },
     "33": {
-        "fold": 3,
+        "fold": 0,
+        "img_size": 320
+    },
+    "28": {
+        "fold": 0,
+        "img_size": 320
+    },
+    "29": {
+        "fold": 0,
+        "img_size": 320
+    },
+    "34": {
+        "fold": 0,
+        "img_size": 320
+    },
+    "35": {
+        "fold": 0,
+        "img_size": 320
+    },
+    "36": {
+        "fold": 0,
         "img_size": 320
     }
 }

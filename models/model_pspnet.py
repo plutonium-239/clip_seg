@@ -1,12 +1,9 @@
 import torch
 import clip
-import cv2
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models.segmentation import fcn
-import torchvision.transforms as tf
-from pspnet import PSPNet
-import transform
+from models.pspnet import PSPNet
+import models.transform as transform
 
 class SegCLIP_PSP(nn.Module):
 	def __init__(self, pspnet, clip_text, hidden_emb_depth=1024):
@@ -29,7 +26,7 @@ class SegCLIP_PSP(nn.Module):
 		w = int((image_size[3]) / 8 * self.zoom_factor)
 		
 		with torch.no_grad():
-			text = self.clip.encode_text(text)
+			text = self.clip_text.encode_text(text)
 
 		image = self.pspnet.layer0(image)
 		image = self.pspnet.layer1(image)
@@ -64,10 +61,10 @@ class SegCLIP_PSP(nn.Module):
 		
 		
 
-def load_segclip_psp(num_classes, zoom=8, img_size=320, device=None):
+def load_segclip_psp(zoom=8, img_size=320, device=None):
 	pspnet = PSPNet(zoom_factor=zoom)
 	clip_text, _ = clip.load('initmodel/RN50.pt', device=device)
-	del clip_text.visual
+	# del clip_text.visual
 	clip_text = clip_text.float()
 	
 	model = SegCLIP_PSP(pspnet, clip_text)

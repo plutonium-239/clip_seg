@@ -11,9 +11,6 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 import os,sys
 import json
-import subprocess # for uploading tensorboard
-from torch.profiler import profile, record_function, ProfilerActivity
-import matplotlib.pyplot as plt
 from models.model import intersectionAndUnionGPU
 
 previous_runs = os.listdir('fewshotruns')
@@ -57,7 +54,7 @@ if config['model_name'] == 'CLIP':
 	model, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=img_size)
 elif config['model_name'] == 'PSPNet':
 	from models import model_pspnet
-	model, preproc = model_pspnet.load_segclip_psp(_toremove_, zoom=config['zoom'], img_size=img_size)
+	model, preproc = model_pspnet.load_segclip_psp(zoom=config['zoom'], img_size=img_size, device=device)
 	preproc_lbl = None
 model.to(device) # redundant
 	
@@ -171,7 +168,10 @@ for epoch in tqdm(range(config['num_epochs'])):
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:
 		#   writer.add_graph(model, (batch_img, text_tokens))
-		output = model(batch_img, text_tokens_val)
+		if config['model_name'] == 'CLIP':
+			output = model(batch_img, text_tokens_val)
+		elif config['model_name']=='PSPNet':
+			output = model(batch_img, text_tokens_val)
 		# print(output.min(), output.max())
 		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
 		# batch_pred[batch_pred > 0] += config['fold']*5
