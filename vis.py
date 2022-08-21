@@ -138,6 +138,8 @@ for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)):
 		
 	lbl, pred = lbl.long(), pred.long().to(device)
 	for label in torch.unique(lbl):
+		if label == 255:
+			continue
 		pred_classes, counts = torch.unique(pred[lbl==label], return_counts=True)
 		for j in range(len(pred_classes)):
 			confusion_matrix[label][pred_classes[j]] += counts[j]
@@ -162,6 +164,8 @@ for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)):
 
 	lbl, pred = lbl.long(), pred.long().to(device)
 	for label in torch.unique(lbl):
+		if label == 255:
+			continue
 		pred_classes, counts = torch.unique(pred[lbl==label], return_counts=True)
 		for j in range(len(pred_classes)):
 			val_confusion_matrix[label][pred_classes[j]] += counts[j]
