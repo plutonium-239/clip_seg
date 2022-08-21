@@ -1,4 +1,4 @@
-from models import model_orig
+# from models import model_orig
 from models.model import intersectionAndUnionGPU
 import clip
 import torch
@@ -26,6 +26,7 @@ logdir = f"run_{config['runid']}"
 run = json.load(open('fewshotruns.json'))[f"{config['runid']}"]
 config['fold'] = run['fold']
 config['img_size'] = run['img_size']
+config['model_name'] = run['model_name']
 
 writer = SummaryWriter('fsimages/'+logdir)
 
@@ -59,9 +60,15 @@ def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **k
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Running on', device, 'logging in', logdir)
 
-segclip, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=config['img_size'])
-segclip.load_state_dict(torch.load(f"fewshotruns/run_{config['runid']}/model.pt", map_location=device))
-segclip.to(device) # redundant
+
+if config['model_name'] == 'CLIP':
+	from models import model_orig
+	model, preproc, preproc_lbl = model_orig.load_custom_clip('RN50', device=device, img_size=config['img_size'])
+elif config['model_name'] == 'PSPNet':
+	from models import model_pspnet
+	model, preproc = model_pspnet.load_segclip_psp(zoom=config['zoom'], img_size=config['img_size'], device=device)
+	preproc_lbl = None
+model.to(device) # redundant
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
 # trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
@@ -109,7 +116,7 @@ print(text_tokens_train.shape)
 print(text_tokens_val.shape)
 # with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
 	# with record_function("model_inference"):
-segclip.eval()
+model.eval()
 
 # approx ones only do +1 instead of +(num_of_pixels) for a pair of (gt, pred) labels
 confusion_matrix = torch.zeros(21,21, device=device)
@@ -120,7 +127,7 @@ val_confusion_matrix_approx = torch.zeros(21,21, device=device)
 for i,(img,lbl) in tqdm(enumerate(trainloader), total=len(trainloader)): 
 	img, lbl = img.to(device), lbl.to(device)
 
-	pred = segclip(img, text_tokens_train)
+	pred = model(img, text_tokens_train)
 	pred = F.softmax(pred, dim=1).argmax(dim=1)
 
 	if i < 20:
@@ -144,7 +151,7 @@ writer.add_figure('conf_approx', heatmap(confusion_matrix_approx.cpu()[1:,1:], p
 for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)): 
 	img, lbl = img.to(device), lbl.to(device)
 
-	pred = segclip(img, text_tokens_val)
+	pred = model(img, text_tokens_val)
 	pred = F.softmax(pred, dim=1).argmax(dim=1)
 	
 	if i == 20:
