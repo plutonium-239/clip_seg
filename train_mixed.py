@@ -12,6 +12,7 @@ import time
 import os,sys
 import json
 from models.model import intersectionAndUnionGPU
+import torch.cuda.amp as amp
 
 previous_runs = os.listdir('fewshotruns')
 if len(previous_runs) == 0:
@@ -62,10 +63,10 @@ elif config['model_name'] == 'PSPNet':
 	model, preproc = model_pspnet.load_segclip_psp(zoom=config['zoom'], img_size=img_size, device=device, jit=jit)
 	preproc_lbl = None
 model.to(device) # redundant
-	
+
 	
 runs = json.load(open('fewshotruns.json'))
-runs[run_number] = {'fold': config['fold'], 'img_size': img_size, 'model_name': config['model_name']}
+runs[run_number] = {'fold': config['fold'], 'img_size': img_size}
 json.dump(runs, open('fewshotruns.json','w'), indent=4)
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
@@ -78,6 +79,8 @@ valloader = DataLoader(valset, batch_size=config['batch_size'], pin_memory=True,
 
 loss_fn = nn.CrossEntropyLoss()
 optimiser = torch.optim.Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
+
+scaler = amp.GradScaler()
 
 pascal_labels = [
 	'aeroplane',
@@ -132,17 +135,20 @@ for epoch in tqdm(range(config['num_epochs'])):
 		batch_img, batch_lbl = batch_img.to(device), batch_lbl.to(device)
 		# if i==0:
 		#   writer.add_graph(model, (batch_img, text_tokens))
-		if config['model_name'] == 'CLIP':
-			output = model(batch_img, text_tokens_train)
-			# print(output.min(), output.max())
-			loss = loss_fn(output, batch_lbl)
-		elif config['model_name']=='PSPNet':
-			output, main_loss, aux_loss = model(batch_img, text_tokens_train, label=batch_lbl)
-			loss = main_loss + config['aux_weight']*aux_loss
+		with amp.autocast():
+			if config['model_name'] == 'CLIP':
+				output = model(batch_img, text_tokens_train)
+				# print(output.min(), output.max())
+				loss = loss_fn(output, batch_lbl)
+			elif config['model_name']=='PSPNet':
+				output, main_loss, aux_loss = model(batch_img, text_tokens_train, label=batch_lbl)
+				loss = main_loss + config['aux_weight']*aux_loss
 
 		optimiser.zero_grad()
-		loss.backward()
-		optimiser.step()
+		scaler.scale(loss).backward()
+		scaler.step(optimiser)
+		scaler.update()
+		
 		batch_pred = F.softmax(output, dim=1).argmax(dim=1)
 		# batch_pred[batch_pred > config['fold']*5] += 5
 		inter,union,_ = intersectionAndUnionGPU(batch_pred, batch_lbl, output.shape[1])

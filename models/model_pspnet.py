@@ -60,9 +60,9 @@ class SegCLIP_PSP(nn.Module):
 		
 		
 
-def load_segclip_psp(zoom=8, img_size=320, device=None):
+def load_segclip_psp(zoom=8, img_size=320, device=None, jit=False):
 	pspnet = PSPNet(zoom_factor=zoom)
-	clip_text, _ = clip.load('initmodel/RN50.pt', device=device)
+	clip_text, _ = clip.load('initmodel/RN50.pt', device=device, jit=jit)
 	# del clip_text.visual
 	# clip_text = clip_text.float()
 	
