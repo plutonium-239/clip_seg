@@ -136,11 +136,11 @@ for epoch in tqdm(range(config['num_epochs'])):
 		# if i==0:
 		#   writer.add_graph(model, (batch_img, text_tokens))
 		with amp.autocast():
-			if config['model_name'] == 'CLIP':
+			if config['model_name'] == 'CLIP_MP':
 				output = model(batch_img, text_tokens_train)
 				# print(output.min(), output.max())
 				loss = loss_fn(output, batch_lbl)
-			elif config['model_name']=='PSPNet':
+			elif config['model_name']=='PSPNet_MP':
 				output, main_loss, aux_loss = model(batch_img, text_tokens_train, label=batch_lbl)
 				loss = main_loss + config['aux_weight']*aux_loss
 
