@@ -26,8 +26,7 @@ class SegCLIP_PSP(nn.Module):
 		w = int((image_size[3]) / 8 * self.zoom_factor)
 		
 		with torch.no_grad():
-			text = self.clip_text.encode_text(text)
-
+			text = self.clip_text.encode_text(text).float()
 		image = self.pspnet.layer0(image)
 		image = self.pspnet.layer1(image)
 		image = self.pspnet.layer2(image)
@@ -39,7 +38,7 @@ class SegCLIP_PSP(nn.Module):
 		
 		if self.zoom_factor != 1:
 			image = F.interpolate(image, size=(h, w), mode='bilinear', align_corners=True)
-
+		
 		ish = image.shape
 		image = image.permute(0,2,3,1).reshape(-1, image.shape[1]) # linearize for faster dot product
 		x = image @ text.t() # [1*320*320, 1024] dot [1024, num_classes] = [1*320*320, num_classes]
@@ -65,7 +64,7 @@ def load_segclip_psp(zoom=8, img_size=320, device=None):
 	pspnet = PSPNet(zoom_factor=zoom)
 	clip_text, _ = clip.load('initmodel/RN50.pt', device=device)
 	# del clip_text.visual
-	clip_text = clip_text.float()
+	# clip_text = clip_text.float()
 	
 	model = SegCLIP_PSP(pspnet, clip_text)
 
