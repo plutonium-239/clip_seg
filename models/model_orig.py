@@ -150,7 +150,8 @@ def load_custom_clip(model_name, img_size=224, device=None):
 	model: The CLIP model with .visual and .transformer
 	preproc: The preprocessing function reqd by model. Expects a numpy array of [H, W, C]
 	'''
-	assert model_name in clip.available_models(), f"model_name should be one of RNx from {clip.available_models()}, found {model_name}"
+	# assert model_name in clip.available_models(), f"model_name should be one of RNx from {clip.available_models()}, found {model_name}"
+	model_name == '/initmodel/RN50.pt'
 	model, preprocess = clip.load(model_name, device=device)
 	model = model.float()
 	# doing .float() is important otherwise it outputs nans (known issue on github page)
