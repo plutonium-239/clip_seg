@@ -179,7 +179,7 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 		"""
 		if self.train:
 			for x in self.val_label_set:
-				target_np[target_np == x] = 0
+				target_np[target_np == x] = 255
 			max_val_label = max(self.val_label_set)
 			target_np[target_np >
 					  max_val_label] = target_np[target_np > max_val_label] - 5
