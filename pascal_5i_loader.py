@@ -178,11 +178,11 @@ class Pascal5iLoader(torchvision.datasets.vision.VisionDataset):
 			- Offseted and masked segmentation mask
 		"""
 		if self.train:
-			for x in self.val_label_set:
-				target_np[target_np == x] = 255
 			max_val_label = max(self.val_label_set)
 			target_np[target_np >
 					  max_val_label] = target_np[target_np > max_val_label] - 5
+			for x in self.val_label_set:
+				target_np[target_np == x] = 255
 		# else:
 		# 	label_mask_idx_map = []
 		# 	for x in self.val_label_set:
