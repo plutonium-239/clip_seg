@@ -66,7 +66,7 @@ model.to(device) # redundant
 config['model_name'] += '_MP' 
 	
 runs = json.load(open('fewshotruns.json'))
-runs[run_number] = {'fold': config['fold'], 'img_size': img_size, 'model_name': config['model_name']}
+runs[run_number] = {'fold': config['fold'], 'img_size': img_size, 'model_name': config['model_name'], 'jit': jit}
 json.dump(runs, open('fewshotruns.json','w'), indent=4)
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
