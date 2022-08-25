@@ -70,7 +70,7 @@ json.dump(runs, open('fewshotruns.json','w'), indent=4)
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
 dataset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=preproc, preproc_lbl=preproc_lbl)
-trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
+trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'], drop_last=True)
 
 # valset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='val', img_size=224, is_transform=True)
 valset = Pascal5iLoader(config['pascal_root'], fold=config['fold'], preproc=preproc, preproc_lbl=preproc_lbl, train=False)
