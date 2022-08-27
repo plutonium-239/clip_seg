@@ -67,8 +67,9 @@ elif config['model_name'] == 'PSPNet':
 	model, preproc = model_pspnet.load_segclip_psp(zoom=config['zoom'], img_size=config['img_size'], device=device)
 	preproc_lbl = None
 model.to(device) # redundant
-
-model.load_state_dict(torch.load(f"fewshotruns/run_{config['runid']}/model.pt", map_location=device))
+pretrained_dict = torch.load(f"fewshotruns/run_{config['runid']}/model.pt", map_location=device)
+pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model.state_dict()}
+model.load_state_dict(pretrained_dict)
 
 # dataset = pascalVOCLoader(config['pascal_root'], preproc, preproc_lbl, split='train', img_size=224, is_transform=True)
 # trainloader = DataLoader(dataset, batch_size=config['batch_size'], pin_memory=True, num_workers=config['num_workers'])
