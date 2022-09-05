@@ -84,7 +84,7 @@ pascal_labels.insert(0, '')
 # pascal_labels_val = [pascal_labels[x] for x in valset.label_set]
 pascal_labels_val = pascal_labels
 # pascal_labels_train.insert(0, '')
-pascal_labels_val.insert(0, '')
+# pascal_labels_val.insert(0, '')
 # text_tokens_train = clip.tokenize(pascal_labels_train).to(device)
 text_tokens_val = clip.tokenize(pascal_labels_val).to(device)
 # print(text_tokens_train.shape)
