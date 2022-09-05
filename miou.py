@@ -93,7 +93,7 @@ print(text_tokens_val.shape)
 	# with record_function("model_inference"):
 model.eval()
 
-vc_miou, tc_miou = 0, 0
+vc_miou_i, vc_miou_u, tc_miou_i, tc_miou_u  = 0, 0, 0, 0
 
 for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)): 
 	img, lbl = img.to(device), lbl.to(device)
@@ -102,16 +102,21 @@ for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)):
 	pred_mask = F.softmax(preds, dim=1).argmax(dim=1)
 	
 	inter,union,_ = intersectionAndUnionGPU(pred_mask, lbl, preds.shape[1])
-	print(inter, union)
-	print((inter/union))
-	train_classes_miou = (inter/union)[valset.train_label_set].sum().item()
-	val_classes_miou = (inter/union)[valset.val_label_set].sum().item()
+	# print(inter, union)
+	# print((inter/union))
+	# train_classes_miou = (inter/union)[valset.train_label_set].sum().item()
+	# val_classes_miou = (inter/union)[valset.val_label_set].sum().item()
 
-	tc_miou += train_classes_miou  
-	vc_miou += val_classes_miou
+	tc_miou_i += inter[valset.train_label_set].sum().item()
+	tc_miou_u += union[valset.train_label_set].sum().item()
+	vc_miou_i += inter[valset.val_label_set].sum().item()
+	vc_miou_u += union[valset.val_label_set].sum().item()
+	
 
-vc_miou /= len(valloader)
-tc_miou /= len(valloader)
+# vc_miou /= len(valloader)
+# tc_miou /= len(valloader)
+vc_miou = vc_miou_i/vc_miou_u
+tc_miou = tc_miou_i/tc_miou_u
 
 print(vc_miou)
 print(tc_miou)
