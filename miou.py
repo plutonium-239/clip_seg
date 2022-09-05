@@ -80,20 +80,20 @@ pascal_classes = [
 template = 'a photo of a '
 pascal_labels = [template+x for x in pascal_classes]
 pascal_labels.insert(0, '')
-pascal_labels_train = [pascal_labels[x] for x in dataset.label_set]
+# pascal_labels_train = [pascal_labels[x] for x in dataset.label_set]
 # pascal_labels_val = [pascal_labels[x] for x in valset.label_set]
 pascal_labels_val = pascal_labels
-pascal_labels_train.insert(0, '')
-# pascal_labels_val.insert(0, '')
-text_tokens_train = clip.tokenize(pascal_labels_train).to(device)
+# pascal_labels_train.insert(0, '')
+pascal_labels_val.insert(0, '')
+# text_tokens_train = clip.tokenize(pascal_labels_train).to(device)
 text_tokens_val = clip.tokenize(pascal_labels_val).to(device)
-print(text_tokens_train.shape)
+# print(text_tokens_train.shape)
 print(text_tokens_val.shape)
 # with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
 	# with record_function("model_inference"):
 model.eval()
 
-vc_miou, tc_miou = 0
+vc_miou, tc_miou = 0, 0
 
 for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)): 
 	img, lbl = img.to(device), lbl.to(device)
@@ -102,11 +102,16 @@ for i,(img,lbl) in tqdm(enumerate(valloader), total=len(valloader)):
 	pred_mask = F.softmax(preds, dim=1).argmax(dim=1)
 	
 	inter,union,_ = intersectionAndUnionGPU(pred_mask, lbl, preds.shape[1])
-	train_classes_miou = (inter[valset.train_label_set].sum() / union[valset.train_label_set].sum()).item()
-	val_classes_miou = (inter[valset.val_label_set].sum() / union[valset.val_label_set].sum()).item()
+	print(inter, union)
+	print((inter/union))
+	train_classes_miou = (inter/union)[valset.train_label_set].sum().item()
+	val_classes_miou = (inter/union)[valset.val_label_set].sum().item()
 
-	vc_miou += train_classes_miou  
-	tc_miou += val_classes_miou
+	tc_miou += train_classes_miou  
+	vc_miou += val_classes_miou
 
 vc_miou /= len(valloader)
 tc_miou /= len(valloader)
+
+print(vc_miou)
+print(tc_miou)
