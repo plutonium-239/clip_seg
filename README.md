@@ -7,7 +7,7 @@ We made changes in the vision branch of CLIP, which includes architectures like 
 We have used PSPNet along with CLIP's text transformer (frozen). This gives us a good starting point for results. However, with just this, the segmentation maps are blobby and the boundaries are not well-defined, though the classes are in their correct approximate locations. This is because the image encoder is tied to the text encoder's embeddings (semantically) because of training. We can resolve this by adding PSPNet without removing the CLIP image encoder and using CLIP's maps as pseudo-labels for training our segmentation model.
 We are testing out methods to improve this.
 
-![](https://i.imgur.com/5ENdq3v.png)
+![Overview](overview.png)
 
 Summaries of some papers related to language-vision are available here: [pdf](paper-summaries.pdf), [web-view](https://hackmd.io/@pu239/language-based-seg)
 The papers covered are:
