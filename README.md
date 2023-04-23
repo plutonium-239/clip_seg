@@ -19,8 +19,7 @@ The papers covered are:
 5. Open-Set Recognition: a Good Closed-Set Classifier is All You Need?[^5]
 6. MaskCLIP (Extract Free Dense Labels from CLIP)[^6]
 
-
-
+### References
 [^1]: [Zhao, Hang et al. "Open Vocabulary Scene Parsing." *International Conference on Computer Vision (ICCV)*. 2017.](https://openaccess.thecvf.com/content_ICCV_2017/papers/Zhao_Open_Vocabulary_Scene_ICCV_2017_paper.pdf)
 [^2]: [Radford, Alec, et al. "Learning Transferable Visual Models From Natural Language Supervision." *ArXiv*, 2021,  /abs/2103.00020.](https://openai.com/research/clip)
 [^3]: [Boyi Li, et al. "Language-driven Semantic Segmentation." *International Conference on Learning Representations*. 2022.](https://openreview.net/forum?id=RriDjddCLN)
